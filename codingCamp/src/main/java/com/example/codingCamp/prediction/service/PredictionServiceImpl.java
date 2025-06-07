@@ -180,16 +180,12 @@ public class PredictionServiceImpl implements PredictionService {
                 throw new RuntimeException("Persentase tugas harus dalam rentang 0-100, nilai: " + persentaseTugas);
             }
 
-            // Pastikan ketidakhadiran valid
-            Integer totalHadir = 160 - performance.getJumlahKetidakhadiran();
-            if (totalHadir < 0 || totalHadir > 160) {
-                throw new RuntimeException("Jumlah kehadiran tidak valid: " + totalHadir + " (dari ketidakhadiran: "
-                        + performance.getJumlahKetidakhadiran() + ")");
-            }
+            
+        
 
-            payload.put("persentaseTugas", persentaseTugas);
-            payload.put("jumlahKetidakhadiran", totalHadir);
-            payload.put("rataRata", performance.getNilaiAkhirRataRata());
+            payload.put("Persentase Tugas", persentaseTugas);
+            payload.put("jumlah Ketidakhadiran", performance.getJumlahKetidakhadiran());
+            payload.put("Rata-rata", performance.getNilaiAkhirRataRata());
 
             log.info("Sending payload: {}", payload);
 
@@ -289,9 +285,9 @@ public class PredictionServiceImpl implements PredictionService {
 
             // Test dengan data sample
             Map<String, Object> testPayload = new HashMap<>();
-            testPayload.put("persentaseTugas", 75.0);
-            testPayload.put("jumlahKetidakhadiran", 20);
-            testPayload.put("rataRata", 80.0);
+            testPayload.put("persentase Tugas", 75.0);
+            testPayload.put("jumlah Ketidakhadiran", 20);
+            testPayload.put("Rata-rata", 80.0);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
