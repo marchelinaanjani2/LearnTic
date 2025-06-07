@@ -16,14 +16,15 @@ public class StudentPerformanceResponseDTO {
     private Long siswaId;
     private String namaSiswa;
 
-    private Map<String, Double> nilaiUjianPerMapel;
-    private Map<String, Double> nilaiTugasPerMapel;
-    private Map<String, Double> nilaiKuisPerMapel;
+    private Map<String, Integer> nilaiUjianPerMapel;
+    private Map<String, Integer> nilaiTugasPerMapel;
+    private Map<String, Integer> nilaiKuisPerMapel;
 
-    private Double rataRataNilaiAkhir;
+    private Integer rataRataNilaiAkhir;
 
-    private Integer jumlahKehadiran;
-    private Double persentaseTugas;
+    private Integer jumlahKetidakhadiran;
+    private Integer persentaseTugas;
+    private String semester;
 
     private String statusPrediksi;
     

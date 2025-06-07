@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 @Repository
 public interface StudentPerformanceRepository extends JpaRepository<StudentPerformance, Long> {
     Optional<StudentPerformance> findTopByStudent_IdAndDeletedAtIsNullOrderByCreatedAtDesc(Long studentId);
-
+    // Tambahkan method ini di StudentPerformanceRepository
+List<StudentPerformance> findAllByDeletedAtIsNullAndStudentIsNotNull();
 
 }

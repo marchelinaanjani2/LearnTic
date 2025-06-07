@@ -2,6 +2,9 @@ package com.example.codingCamp.profile.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+
 import com.example.codingCamp.profile.dto.request.AddUserRequestDTO;
 import com.example.codingCamp.profile.dto.request.UpdateUserRequestDTO;
 import com.example.codingCamp.profile.dto.response.StudentDetailDTO;
@@ -23,4 +26,5 @@ public interface UserService {
     // // List<TeacherResponseDTO> getAllTeachers();
     List<StudentDetailDTO> getAllStudent(String search);
     UserResponseDTO getStudentById(Long id);
+    List<UserResponseDTO> createUsersFromCsv(MultipartFile file) throws IOException;
 }

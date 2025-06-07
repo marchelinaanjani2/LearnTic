@@ -16,6 +16,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@DiscriminatorValue("TEACHER")  
 public class Teacher extends UserModel {
 
  

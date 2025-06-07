@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.codingCamp.profile.model.Parent;
 import com.example.codingCamp.profile.model.Student;
 
 @Repository
@@ -21,7 +22,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> searchByNameEmailOrPhone(@Param("keyword") String keyword);
 
     List<Student> findByDeletedAtIsNull();
-
+    List<Student> findByOrangTua(Parent parent);
     Optional<Student> findByName(String name);
 
     @EntityGraph(attributePaths = "daftarNilai")

@@ -1,15 +1,12 @@
 package com.example.codingCamp.prediction.dto.response;
 
-
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PredictionResponseDTO {
@@ -17,9 +14,8 @@ public class PredictionResponseDTO {
     private Long siswaId;
     private String semesterSiswa;
     private String namaSiswa;
-    private Double scaledNilai;
-    private Double scaledKehadiran;
-    private Double scaledTugas;
+    private Integer nilaiAkhir;
+    private Integer jumlahKetidakhadiran;
+    private Integer persentaseTugas;
     private String statusPrediksi;
-
 }

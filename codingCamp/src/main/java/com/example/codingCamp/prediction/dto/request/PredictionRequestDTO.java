@@ -1,10 +1,5 @@
 package com.example.codingCamp.prediction.dto.request;
 
-
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class PredictionRequestDTO {
     private Long siswaId;
     private String semester;
-    private Double rataRataNilaiAkhir;
-    private Integer jumlahKehadiran;
-    private Double persentaseTugas;
+    private Integer rataRataNilaiAkhir;
+    private Integer jumlahKetidakhadiran;
+    private Integer persentaseTugas;
 }

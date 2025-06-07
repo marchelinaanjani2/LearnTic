@@ -1,16 +1,20 @@
 package com.example.codingCamp.profile.service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.codingCamp.profile.dto.request.AddUserRequestDTO;
 import com.example.codingCamp.profile.dto.request.UpdateUserRequestDTO;
@@ -44,8 +48,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserModel findUserByUsername(String username) {
-        UserModel user = userRepository.findByUsername(username);
-        return user;
+        return userRepository.findByUsername(username).orElse(null);
     }
 
     @Override
@@ -58,7 +61,7 @@ public class UserServiceImpl implements UserService {
     public UserModel findUserByEmailOrUsername(String emailOrUsername) {
         UserModel user = userRepository.findByEmail(emailOrUsername);
         if (user == null) {
-            user = userRepository.findByUsername(emailOrUsername);
+            user = userRepository.findByUsername(emailOrUsername).orElse(null);
         }
         return user;
     }
@@ -86,7 +89,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Nomor telepon harus terdiri dari 10-15 digit angka");
         }
 
-        if (userRepository.findByUsername(userDTO.getUsername()) != null) {
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
             throw new RuntimeException("Username sudah digunakan");
         }
         if (userRepository.findByEmail(userDTO.getEmail()) != null) {
@@ -133,6 +136,150 @@ public class UserServiceImpl implements UserService {
                 newUser.getUpdatedAt());
     }
 
+    // add user from csv
+    public List<UserResponseDTO> createUsersFromCsv(MultipartFile file) throws IOException {
+        List<AddUserRequestDTO> parentDTOs = new ArrayList<>();
+        List<AddUserRequestDTO> studentDTOs = new ArrayList<>();
+        List<UserResponseDTO> createdUsers = new ArrayList<>();
+
+        // Baca file dan pisahkan parent/student
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            int lineNumber = 0;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                if (lineNumber == 1)
+                    continue; // skip header
+
+                String[] fields = line.split(",", -1);
+                if (fields.length < 6) {
+                    throw new RuntimeException("Format CSV salah di baris " + lineNumber);
+                }
+
+                AddUserRequestDTO userDTO = new AddUserRequestDTO();
+                userDTO.setName(fields[0].trim());
+                userDTO.setUsername(fields[1].trim());
+                userDTO.setEmail(fields[2].trim());
+                userDTO.setPhone(fields[3].trim());
+                userDTO.setPassword(fields[4].trim());
+                userDTO.setRoleName(fields[5].trim());
+
+                String role = userDTO.getRoleName().toLowerCase();
+                if ("parent".equalsIgnoreCase(userDTO.getRoleName())) {
+                    parentDTOs.add(userDTO);
+                } else {
+                    studentDTOs.add(userDTO);
+                }
+            }
+        }
+
+        // Proses parent terlebih dahulu
+        for (AddUserRequestDTO parentDTO : parentDTOs) {
+            createdUsers.add(addUserFromCsv(parentDTO));
+        }
+
+        // Proses student setelah parent semua dibuat
+        for (AddUserRequestDTO studentDTO : studentDTOs) {
+            try {
+                createdUsers.add(addUserFromCsv(studentDTO));
+            } catch (Exception e) {
+                // Log error tetapi lanjutkan proses
+                System.err.println("Gagal membuat student: " + e.getMessage());
+            }
+        }
+
+        // Update relasi parent-child
+        updateParentChildRelations();
+
+        return createdUsers;
+    }
+
+    private void updateParentChildRelations() {
+        List<Parent> parents = userRepository.findAllParents();
+
+        for (Parent parent : parents) {
+            // Cari semua student yang memiliki parent ini
+            List<Student> children = studentRepository.findByOrangTua(parent);
+
+            if (!children.isEmpty()) {
+                parent.setAnak(children);
+                userRepository.save(parent);
+            }
+        }
+    }
+
+    public UserResponseDTO addUserFromCsv(AddUserRequestDTO userDTO) {
+        // Validasi dasar
+        if (userDTO.getUsername().contains(" ")) {
+            throw new RuntimeException("Username tidak boleh mengandung spasi");
+        }
+
+        if (!userDTO.getPhone().matches("^\\d{10,15}$")) {
+            throw new RuntimeException("Nomor telepon harus terdiri dari 10-15 digit angka");
+        }
+
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            throw new RuntimeException("Username sudah digunakan");
+        }
+        if (userRepository.findByEmail(userDTO.getEmail()) != null) {
+            throw new RuntimeException("Email sudah digunakan");
+        }
+        if (userRepository.findByPhone(userDTO.getPhone()).isPresent()) {
+            throw new RuntimeException("Nomor telepon sudah digunakan");
+        }
+
+        Role role = roleRepository.findByRole(userDTO.getRoleName())
+                .orElseThrow(() -> new RuntimeException("Role tidak ditemukan"));
+
+        UserModel user;
+
+        if ("STUDENT".equalsIgnoreCase(role.getRole())) { // Ubah dari "Student" ke "STUDENT"
+            Student student = new Student();
+            student.setKelas(userDTO.getKelas());
+
+            // FIX: Tambahkan null check untuk orangTuaUsername
+            if (userDTO.getOrangTuaUsername() != null && !userDTO.getOrangTuaUsername().trim().isEmpty()) {
+                UserModel parentUser = userRepository.findByUsername(userDTO.getOrangTuaUsername())
+                        .orElseThrow(() -> new RuntimeException(
+                                "Orang tua tidak ditemukan untuk username: " + userDTO.getOrangTuaUsername()));
+
+                if (!(parentUser instanceof Parent)) {
+                    throw new RuntimeException(
+                            "User dengan username " + userDTO.getOrangTuaUsername() + " bukan Parent");
+                }
+
+                student.setOrangTua((Parent) parentUser);
+            }
+            // Jika orangTuaUsername null/empty, skip set parent (boleh null)
+
+            user = student;
+        } else if ("PARENT".equalsIgnoreCase(role.getRole())) { // Ubah dari "Parent" ke "PARENT"
+            user = new Parent();
+        } else {
+            user = new UserModel();
+        }
+
+        // Set common properties
+        user.setName(userDTO.getName());
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        user.setPhone(userDTO.getPhone());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setRole(role);
+
+        UserModel savedUser = userRepository.save(user);
+
+        return new UserResponseDTO(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getUsername(),
+                savedUser.getEmail(),
+                savedUser.getPhone(),
+                savedUser.getRole().getRole(),
+                savedUser.getCreatedAt(),
+                savedUser.getUpdatedAt());
+    }
+
     @Override
     public UserResponseDTO updateUser(UpdateUserRequestDTO userDTO) {
         // Cari user berdasarkan ID
@@ -148,7 +295,7 @@ public class UserServiceImpl implements UserService {
             if (userDTO.getUsername().contains(" ")) {
                 throw new RuntimeException("Username tidak boleh mengandung spasi");
             }
-            if (userRepository.findByUsername(userDTO.getUsername()) != null) {
+            if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
                 throw new RuntimeException("Username sudah digunakan");
             }
             user.setUsername(userDTO.getUsername());
@@ -203,7 +350,12 @@ public class UserServiceImpl implements UserService {
 
         if (user instanceof Parent) {
             Parent parent = (Parent) user;
-            String namaAnak = parent.getAnak() != null ? parent.getAnak().getName() : null;
+            String namaAnak = null;
+            if (parent.getAnak() != null && !parent.getAnak().isEmpty()) {
+                namaAnak = parent.getAnak().stream()
+                        .map(Student::getName)
+                        .collect(Collectors.joining(", "));
+            }
 
             return new ParentDetailDTO(
                     parent.getId(),
@@ -222,8 +374,9 @@ public class UserServiceImpl implements UserService {
                             perf.getNilaiUjianPerMapel(),
                             perf.getNilaiTugasPerMapel(),
                             perf.getNilaiKuisPerMapel(),
-                            perf.getJumlahKehadiran(),
+                            perf.getJumlahKetidakhadiran(),
                             perf.getPersentaseTugas(),
+                            perf.getSemester(),
                             perf.getNilaiAkhirRataRata(),
                             perf.getStatusPrediksi()))
                     .toList();
@@ -238,8 +391,7 @@ public class UserServiceImpl implements UserService {
                     student.getCreatedAt(),
                     student.getUpdatedAt(),
                     daftarNilaiDTO,
-                    student.getKelas(),
-                    student.getSemester());
+                    student.getKelas());
         } else {
             // User umum (bukan parent/student)
             return new UserResponseDTO(
@@ -283,18 +435,40 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponseDTO> getAllUsers(Long id, String name, String email, String role) {
-        // Get all users that haven't been deleted
-        List<UserModel> users = userRepository.findByDeletedAtIsNull();
+        // PERBAIKAN: Gunakan method yang benar dan tambah logging
+        List<UserModel> users;
 
-        // Apply filters if provided
+        try {
+            users = userRepository.findByDeletedAtIsNull();
+            System.out.println("DEBUG: Found " + users.size() + " active users from repository");
+        } catch (Exception e) {
+            System.out.println("ERROR: Failed to fetch active users, trying alternative method");
+            users = userRepository.findAllActiveUsers();
+            System.out.println("DEBUG: Found " + users.size() + " users using alternative query");
+        }
+
+        // Debug: Print semua user yang ditemukan
+        for (UserModel user : users) {
+            System.out.println("DEBUG: User - ID: " + user.getId() +
+                    ", Name: " + user.getName() +
+                    ", Username: " + user.getUsername() +
+                    ", Role: " + (user.getRole() != null ? user.getRole().getRole() : "NULL") +
+                    ", DeletedAt: " + user.getDeletedAt());
+        }
+
+        // Apply filters
         List<UserModel> filteredUsers = users.stream()
                 .filter(user -> id == null || user.getId().equals(id))
                 .filter(user -> name == null || user.getName().toLowerCase().contains(name.toLowerCase()))
                 .filter(user -> email == null || user.getEmail().toLowerCase().contains(email.toLowerCase()))
-                .filter(user -> role == null || user.getRole().getRole().toLowerCase().contains(role.toLowerCase()))
+                .filter(user -> role == null ||
+                        (user.getRole() != null &&
+                                user.getRole().getRole() != null &&
+                                user.getRole().getRole().equalsIgnoreCase(role)))
                 .collect(Collectors.toList());
 
-        // Convert to DTOs
+        System.out.println("DEBUG: After filtering, found " + filteredUsers.size() + " users");
+
         return filteredUsers.stream()
                 .map(user -> new UserResponseDTO(
                         user.getId(),
@@ -302,7 +476,7 @@ public class UserServiceImpl implements UserService {
                         user.getUsername(),
                         user.getEmail(),
                         user.getPhone(),
-                        user.getRole().getRole(),
+                        user.getRole() != null ? user.getRole().getRole() : null,
                         user.getCreatedAt(),
                         user.getUpdatedAt()))
                 .collect(Collectors.toList());
@@ -329,12 +503,10 @@ public class UserServiceImpl implements UserService {
             dto.setUpdatedAt(student.getUpdatedAt());
             dto.setRole("Student");
             dto.setKelas(student.getKelas());
-            dto.setSemester(student.getSemester());
             // daftarNilai boleh tidak diisi karena tidak dibutuhkan
             return dto;
         }).collect(Collectors.toList());
     }
-
 
     @Override
     public StudentDetailDTO getStudentById(Long id) {
@@ -346,8 +518,9 @@ public class UserServiceImpl implements UserService {
                         perf.getNilaiUjianPerMapel(),
                         perf.getNilaiTugasPerMapel(),
                         perf.getNilaiKuisPerMapel(),
-                        perf.getJumlahKehadiran(),
+                        perf.getJumlahKetidakhadiran(),
                         perf.getPersentaseTugas(),
+                        perf.getSemester(),
                         perf.getNilaiAkhirRataRata(),
                         perf.getStatusPrediksi()))
                 .collect(Collectors.toList());
@@ -362,8 +535,7 @@ public class UserServiceImpl implements UserService {
                 student.getCreatedAt(),
                 student.getUpdatedAt(),
                 daftarNilaiDTO,
-                student.getKelas(),
-                student.getSemester());
+                student.getKelas());
     }
 
 }

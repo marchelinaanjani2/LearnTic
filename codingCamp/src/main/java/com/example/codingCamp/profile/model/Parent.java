@@ -2,7 +2,6 @@ package com.example.codingCamp.profile.model;
 
 import java.util.List;
 
-
 import com.example.codingCamp.profile.model.Student;
 
 import jakarta.persistence.*;
@@ -16,9 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@DiscriminatorValue("PARENT")
 public class Parent extends UserModel {
-    @OneToOne
-    @JoinColumn(name = "student_id")
-    private Student anak;
 
+    @OneToMany(mappedBy = "orangTua", fetch = FetchType.LAZY)
+    private List<Student> anak;  
 }

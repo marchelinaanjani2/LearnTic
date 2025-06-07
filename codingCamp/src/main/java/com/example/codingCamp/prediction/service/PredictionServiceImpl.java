@@ -8,153 +8,323 @@ import com.example.codingCamp.profile.repository.StudentRepository;
 import com.example.codingCamp.student.model.StudentPerformance;
 import com.example.codingCamp.student.repository.StudentPerformanceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PredictionServiceImpl implements PredictionService {
 
-    @Autowired
-    private StudentPerformanceRepository performanceRepository;
+    private enum PredictionStatus {
+        SIGNIFICANT_INCREASE("Significant Increase Performance"),
+        STABLE("Stable Performance"),
+        SIGNIFICANT_DECREASE("Significant Decrease Performance");
 
-    @Autowired
-    private StudentRepository studentRepository;
+        private final String displayName;
 
-    @Autowired
-    private PredictionRepository predictionRepository;
+        PredictionStatus(String displayName) {
+            this.displayName = displayName;
+        }
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final String flaskApiUrl = "http://localhost:5000/predict";
+        public String getDisplayName() {
+            return displayName;
+        }
 
-    private double meanNilai;
-    private double stdNilai;
+        public static PredictionStatus fromString(String text) {
+            for (PredictionStatus status : PredictionStatus.values()) {
+                if (status.displayName.equalsIgnoreCase(text)) {
+                    return status;
+                }
+            }
+            return STABLE; // Default value if not matched
+        }
+    }
 
-    private double meanKehadiran;
-    private double stdKehadiran;
+    private final StudentPerformanceRepository performanceRepository;
+    private final StudentRepository studentRepository;
+    private final PredictionRepository predictionRepository;
+    private final RestTemplate restTemplate;
 
-    private double meanTugas;
-    private double stdTugas;
+    // Update the URL to include the correct endpoint
+    @Value("${flask.api.url:https://learntic-production.up.railway.app/predict}")
+    private String flaskApiUrl;
 
     @Override
     public PredictionResponseDTO predict(Long siswaId) {
-        // Update statistik mean dan std sebelum scaling
-        updateStatistics();
+        log.info("Starting prediction for student ID: {}", siswaId);
 
+        // Validasi input
+        if (siswaId == null || siswaId <= 0) {
+            throw new IllegalArgumentException("ID siswa tidak valid");
+        }
+
+        // Ambil data performa terbaru
         StudentPerformance performance = performanceRepository
                 .findTopByStudent_IdAndDeletedAtIsNullOrderByCreatedAtDesc(siswaId)
-                .orElseThrow(() -> new RuntimeException("Data performa siswa tidak ditemukan"));
+                .orElseThrow(
+                        () -> new RuntimeException("Data performa siswa dengan ID " + siswaId + " tidak ditemukan"));
 
+        // Ambil data siswa
         Student siswa = studentRepository.findById(siswaId)
-                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan"));
+                .orElseThrow(() -> new RuntimeException("Siswa dengan ID " + siswaId + " tidak ditemukan"));
 
-        // Scaling
-        double scaledNilai = (performance.getNilaiAkhirRataRata() - meanNilai) / stdNilai;
-        double scaledKehadiran = (performance.getJumlahKehadiran() - meanKehadiran) / stdKehadiran;
-        double scaledTugas = (performance.getPersentaseTugas() - meanTugas) / stdTugas;
+        // Validasi data performa
+        validatePerformanceData(performance);
 
-        // Kirim ke Flask API
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("rataRataNilaiAkhir", scaledNilai);
-        payload.put("jumlahKehadiran", scaledKehadiran);
-        payload.put("persentaseTugas", scaledTugas);
+        // Buat prediksi
+        PredictionStatus predictionStatus = callFlaskPredictionApi(performance);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
-
-        String predictionResult = "UNKNOWN";
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(flaskApiUrl, entity, Map.class);
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                predictionResult = (String) response.getBody().get("prediction");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Prediction prediction = Prediction.builder()
-                .siswaId(siswa.getId())
-                .namaSiswa(siswa.getName())
-                .semesterSiswa(siswa.getSemester())
-                .scaledNilai(scaledNilai)
-                .scaledKehadiran(scaledKehadiran)
-                .scaledTugas(scaledTugas)
-                .statusPrediksi(predictionResult)
-                .createdAt(new Date())
-                .build();
-
+        // Simpan hasil prediksi
+        Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
         predictionRepository.save(prediction);
 
-        return toPredictionResponseDTO(prediction, siswa, scaledNilai, scaledKehadiran, scaledTugas);
+        log.info("Prediction completed for student ID: {} with status: {}", siswaId, predictionStatus.getDisplayName());
+        return toPredictionResponseDTO(prediction);
     }
 
-    private PredictionResponseDTO toPredictionResponseDTO(
-            Prediction prediction,
-            Student siswa,
-            double scaledNilai,
-            double scaledKehadiran,
-            double scaledTugas) {
-        PredictionResponseDTO response = new PredictionResponseDTO();
-        response.setPredictionId(prediction.getId());
-        response.setSiswaId(siswa.getId());
-        response.setNamaSiswa(siswa.getName());
-        response.setSemesterSiswa(siswa.getSemester());
-        response.setScaledNilai(scaledNilai);
-        response.setScaledKehadiran(scaledKehadiran);
-        response.setScaledTugas(scaledTugas);
-        response.setStatusPrediksi(prediction.getStatusPrediksi());
-        return response;
-    }
+    @Override
+    public List<PredictionResponseDTO> predictBatch() {
+        log.info("Starting batch prediction");
 
-    private double mean(List<Double> values) {
-        if (values.isEmpty())
-            return 0;
-        double sum = 0;
-        for (Double v : values)
-            sum += v;
-        return sum / values.size();
-    }
+        List<StudentPerformance> allPerformances = performanceRepository
+                .findAllByDeletedAtIsNullAndStudentIsNotNull();
 
-    private double stddev(List<Double> values, double mean) {
-        if (values.size() < 2)
-            return 1; // supaya tidak dibagi nol, set std minimal 1
-        double varianceSum = 0;
-        for (Double v : values) {
-            varianceSum += Math.pow(v - mean, 2);
+        if (allPerformances.isEmpty()) {
+            log.warn("No performance data found for batch prediction");
+            return new ArrayList<>();
         }
-        return Math.sqrt(varianceSum / (values.size() - 1));
+
+        List<PredictionResponseDTO> results = new ArrayList<>();
+        int successCount = 0;
+        int failCount = 0;
+
+        for (StudentPerformance performance : allPerformances) {
+            try {
+                Student siswa = performance.getStudent();
+                if (siswa == null) {
+                    log.warn("Performance data found without student reference, skipping");
+                    continue;
+                }
+
+                validatePerformanceData(performance);
+                PredictionStatus predictionStatus = callFlaskPredictionApi(performance);
+
+                Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
+                predictionRepository.save(prediction);
+
+                results.add(toPredictionResponseDTO(prediction));
+                successCount++;
+
+                // Add a small delay to avoid overwhelming the API
+                Thread.sleep(100);
+
+            } catch (Exception e) {
+                log.error("Failed to predict for student ID: {}, error: {}",
+                        performance.getStudent() != null ? performance.getStudent().getId() : "unknown",
+                        e.getMessage());
+                failCount++;
+
+                // Continue with other students instead of failing completely
+                continue;
+            }
+        }
+
+        log.info("Batch prediction completed. Success: {}, Failed: {}", successCount, failCount);
+
+        if (results.isEmpty() && failCount > 0) {
+            throw new RuntimeException("Semua prediksi gagal. Periksa koneksi ke layanan prediksi.");
+        }
+
+        return results;
     }
 
-    private void updateStatistics() {
-        List<StudentPerformance> allPerformances = performanceRepository.findAll();
+    private void validatePerformanceData(StudentPerformance performance) {
+        if (performance.getNilaiAkhirRataRata() == null ||
+                performance.getJumlahKetidakhadiran() == null ||
+                performance.getPersentaseTugas() == null) {
+            throw new RuntimeException("Data performa tidak lengkap");
+        }
 
-        List<Double> nilaiList = allPerformances.stream()
-                .map(StudentPerformance::getNilaiAkhirRataRata)
-                .toList();
+        if (performance.getNilaiAkhirRataRata() < 0 || performance.getNilaiAkhirRataRata() > 100) {
+            throw new RuntimeException("Nilai akhir rata-rata tidak valid (harus 0-100)");
+        }
 
-        List<Double> kehadiranList = allPerformances.stream()
-                .map(sp -> sp.getJumlahKehadiran().doubleValue())
-                .toList();
+        if (performance.getJumlahKetidakhadiran() < 0) {
+            throw new RuntimeException("Jumlah Ketidakhadiran tidak valid");
+        }
 
-        List<Double> tugasList = allPerformances.stream()
-                .map(StudentPerformance::getPersentaseTugas)
-                .toList();
+        if (performance.getPersentaseTugas() < 0 || performance.getPersentaseTugas() > 100) {
+            throw new RuntimeException("Persentase tugas tidak valid (harus 0-100)");
+        }
+    }
 
-        meanNilai = mean(nilaiList);
-        stdNilai = stddev(nilaiList, meanNilai);
+    private PredictionStatus callFlaskPredictionApi(StudentPerformance performance) {
+        try {
+            log.info("Calling Flask API at: {}", flaskApiUrl);
 
-        meanKehadiran = mean(kehadiranList);
-        stdKehadiran = stddev(kehadiranList, meanKehadiran);
+            // Prepare payload dengan validasi tambahan
+            Map<String, Object> payload = new HashMap<>();
 
-        meanTugas = mean(tugasList);
-        stdTugas = stddev(tugasList, meanTugas);
+            // Pastikan persentaseTugas dalam rentang 0-100
+            Integer persentaseTugas = performance.getPersentaseTugas();
+            if (persentaseTugas < 0 || persentaseTugas > 100) {
+                throw new RuntimeException("Persentase tugas harus dalam rentang 0-100, nilai: " + persentaseTugas);
+            }
+
+            // Pastikan ketidakhadiran valid
+            Integer totalHadir = 160 - performance.getJumlahKetidakhadiran();
+            if (totalHadir < 0 || totalHadir > 160) {
+                throw new RuntimeException("Jumlah kehadiran tidak valid: " + totalHadir + " (dari ketidakhadiran: "
+                        + performance.getJumlahKetidakhadiran() + ")");
+            }
+
+            payload.put("persentaseTugas", persentaseTugas);
+            payload.put("jumlahKetidakhadiran", totalHadir);
+            payload.put("rataRata", performance.getNilaiAkhirRataRata());
+
+            log.info("Sending payload: {}", payload);
+
+            // Set headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+
+            // Make API call
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    flaskApiUrl,
+                    entity,
+                    Map.class);
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
+
+                // Cek apakah ada error dari Flask API
+                if (responseBody.containsKey("error")) {
+                    String errorMsg = responseBody.get("error").toString();
+                    log.warn("Flask API returned error: {}, using fallback prediction", errorMsg);
+                    return calculateFallbackPrediction(performance);
+
+                }
+
+                // Cek apakah ada prediction
+                Object predictionObj = responseBody.get("prediction");
+                if (predictionObj != null) {
+                    String apiResult = predictionObj.toString();
+                    log.info("API Response successful: {}", apiResult);
+                    return PredictionStatus.fromString(apiResult);
+                } else {
+                    log.warn("API response missing prediction field: {}", responseBody);
+                    // Log semua keys yang tersedia untuk debugging
+                    log.warn("Available response keys: {}", responseBody.keySet());
+                    return PredictionStatus.STABLE; // Default fallback
+                }
+            } else {
+                log.error("API returned unsuccessful response: {} - {}",
+                        response.getStatusCode(), response.getBody());
+                throw new RuntimeException("API returned " + response.getStatusCode());
+            }
+
+        } catch (RestClientException e) {
+            log.error("REST Client Exception: {}", e.getMessage());
+
+            if (e.getMessage().contains("404")) {
+                throw new RuntimeException(
+                        "Flask prediction service endpoint not found. Please check the URL configuration.");
+            } else if (e.getMessage().contains("Connection refused") || e.getMessage().contains("timeout")) {
+                throw new RuntimeException("Cannot connect to Flask prediction service. Service may be down.");
+            }
+
+            throw new RuntimeException("Prediction service unavailable: " + e.getMessage());
+        } catch (RuntimeException e) {
+            // Re-throw runtime exceptions (including our custom ones)
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error calling Flask API: {}", e.getMessage());
+            throw new RuntimeException("Prediction service error: " + e.getMessage());
+        }
+    }
+
+    private PredictionStatus calculateFallbackPrediction(StudentPerformance performance) {
+        // Simple rule-based prediction
+        int score = (int) Math.round(
+                (performance.getNilaiAkhirRataRata() * 0.5) +
+                        (performance.getPersentaseTugas() * 0.3) +
+                        (performance.getJumlahKetidakhadiran() * 0.2));
+
+        if (score >= 80)
+            return PredictionStatus.SIGNIFICANT_INCREASE;
+        if (score >= 60)
+            return PredictionStatus.STABLE;
+        return PredictionStatus.SIGNIFICANT_DECREASE;
+    }
+
+    private Prediction buildPrediction(Student siswa, StudentPerformance performance, PredictionStatus status) {
+        return Prediction.builder()
+                .siswaId(siswa.getId())
+                .namaSiswa(siswa.getName())
+                .semesterSiswa(performance.getSemester())
+                .nilaiAkhir(performance.getNilaiAkhirRataRata())
+                .jumlahKetidakhadiran(performance.getJumlahKetidakhadiran())
+                .persentaseTugas(performance.getPersentaseTugas())
+                .statusPrediksi(status.getDisplayName())
+                .createdAt(new Date())
+                .build();
+    }
+
+    // Method untuk test Flask API secara manual
+    public void testFlaskApi() {
+        try {
+            log.info("Testing Flask API connection...");
+
+            // Test dengan data sample
+            Map<String, Object> testPayload = new HashMap<>();
+            testPayload.put("persentaseTugas", 75.0);
+            testPayload.put("jumlahKetidakhadiran", 20);
+            testPayload.put("rataRata", 80.0);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(testPayload, headers);
+
+            log.info("Sending test payload: {}", testPayload);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    flaskApiUrl,
+                    entity,
+                    String.class);
+
+            log.info("Raw API Response Status: {}", response.getStatusCode());
+            log.info("Raw API Response Body: {}", response.getBody());
+            log.info("Raw API Response Headers: {}", response.getHeaders());
+
+        } catch (Exception e) {
+            log.error("Flask API test failed: {}", e.getMessage(), e);
+        }
+    }
+
+    private PredictionResponseDTO toPredictionResponseDTO(Prediction prediction) {
+        return PredictionResponseDTO.builder()
+                .predictionId(prediction.getId())
+                .siswaId(prediction.getSiswaId())
+                .namaSiswa(prediction.getNamaSiswa())
+                .semesterSiswa(prediction.getSemesterSiswa())
+                .nilaiAkhir(prediction.getNilaiAkhir())
+                .jumlahKetidakhadiran(prediction.getJumlahKetidakhadiran())
+                .persentaseTugas(prediction.getPersentaseTugas())
+                .statusPrediksi(prediction.getStatusPrediksi())
+                .build();
     }
 }

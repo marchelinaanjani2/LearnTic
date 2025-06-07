@@ -29,25 +29,25 @@ public class StudentPerformance {
     @CollectionTable(name = "nilai_ujian_per_mapel", joinColumns = @JoinColumn(name = "student_performance_id"))
     @MapKeyColumn(name = "mata_pelajaran")
     @Column(name = "nilai_ujian")
-    private Map<String, Double> nilaiUjianPerMapel;
+    private Map<String, Integer> nilaiUjianPerMapel;
 
     @ElementCollection
     @CollectionTable(name = "nilai_tugas_per_mapel", joinColumns = @JoinColumn(name = "student_performance_id"))
     @MapKeyColumn(name = "mata_pelajaran")
     @Column(name = "nilai_tugas")
-    private Map<String, Double> nilaiTugasPerMapel;
+    private Map<String, Integer> nilaiTugasPerMapel;
 
     @ElementCollection
     @CollectionTable(name = "nilai_kuis_per_mapel", joinColumns = @JoinColumn(name = "student_performance_id"))
     @MapKeyColumn(name = "mata_pelajaran")
     @Column(name = "nilai_kuis")
-    private Map<String, Double> nilaiKuisPerMapel;
+    private Map<String, Integer> nilaiKuisPerMapel;
 
-    private Integer jumlahKehadiran;
-    private Double persentaseTugas;
+    private Integer jumlahKetidakhadiran;
+    private Integer persentaseTugas;
 
-    private Double nilaiAkhirRataRata;
-    private String kelas;
+    private Integer nilaiAkhirRataRata;
+    private String semester;
 
     private Boolean submittedForPrediction = false;
 

@@ -35,5 +35,8 @@ public class AddUserRequestDTO {
 
     @NotEmpty(message = "Role tidak boleh kosong")
     private String roleName; // Ubah dari roleId ke roleName
+
+    private String kelas;
+    private String orangTuaUsername; 
 }
 

@@ -22,12 +22,10 @@ public class Student extends UserModel {
     private List<StudentPerformance> daftarNilai;
 
     // Relasi ke orang tua
-    @OneToOne(mappedBy = "anak", fetch = FetchType.LAZY)
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
     private Parent orangTua;
 
     private String kelas;
-    private String semester;
-
-
 
 }

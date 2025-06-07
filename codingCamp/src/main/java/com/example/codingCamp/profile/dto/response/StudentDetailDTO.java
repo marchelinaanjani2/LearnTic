@@ -14,15 +14,15 @@ import java.util.List;
 public class StudentDetailDTO extends UserResponseDTO {
     private List<StudentPerformanceDTO> daftarNilai;
     private String kelas;
-    private String semester;
+
 
     public StudentDetailDTO(Long id, String name, String username, String email,
                             String phone, String role, Date createdAt, Date updatedAt,
-                            List<StudentPerformanceDTO> daftarNilai, String kelas, String semester) {
+                            List<StudentPerformanceDTO> daftarNilai, String kelas) {
         super(id, name, username, email, phone, role, createdAt, updatedAt);
         this.daftarNilai = daftarNilai;
         this.kelas = kelas;
-        this.semester = semester;
+
         
     }
 }

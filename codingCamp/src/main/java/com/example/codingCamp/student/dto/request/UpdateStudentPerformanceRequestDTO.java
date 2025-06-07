@@ -19,13 +19,13 @@ public class UpdateStudentPerformanceRequestDTO {
     @NotNull(message = "siswaId tidak boleh null")
     private Long siswaId;
 
-    private Map<String, Double> nilaiUjianPerMapel;
-    private Map<String, Double> nilaiTugasPerMapel;
-    private Map<String, Double> nilaiKuisPerMapel;
+    private Map<String, Integer> nilaiUjianPerMapel;
+    private Map<String, Integer> nilaiTugasPerMapel;
+    private Map<String, Integer> nilaiKuisPerMapel;
 
-    private Integer jumlahKehadiran;
-    private Double persentaseTugas;
-
+    private Integer jumlahKetidakhadiran;
+    private Integer persentaseTugas;
+    private String semester;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date createdAt;

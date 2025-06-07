@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.codingCamp.dto.BaseResponseDTO;
 
 import com.example.codingCamp.profile.dto.request.AddUserRequestDTO;
@@ -32,6 +34,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    //add one by one
     @PostMapping("/add")
     public ResponseEntity<?> addUser(@Valid @RequestBody AddUserRequestDTO userDTO, BindingResult bindingResult) {
         BaseResponseDTO<UserResponseDTO> baseResponseDTO = new BaseResponseDTO<>();
@@ -65,6 +68,34 @@ public class UserController {
             return new ResponseEntity<>(baseResponseDTO, HttpStatus.BAD_REQUEST);
         }
     }
+
+    //add by batch use csv
+    @PostMapping("/upload-csv")
+    public ResponseEntity<?> uploadUsersCsv(@RequestParam("file") MultipartFile file) {
+        BaseResponseDTO<List<UserResponseDTO>> baseResponseDTO = new BaseResponseDTO<>();
+        try {
+            List<UserResponseDTO> createdUsers = userService.createUsersFromCsv(file);
+
+            baseResponseDTO.setStatus(HttpStatus.CREATED.value());
+            baseResponseDTO.setData(createdUsers);
+            baseResponseDTO.setMessage(String.format("%d user berhasil ditambahkan dari file CSV", createdUsers.size()));
+            baseResponseDTO.setTimestamp(new Date());
+
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.CREATED);
+
+        } catch (RuntimeException e) {
+            baseResponseDTO.setStatus(HttpStatus.BAD_REQUEST.value());
+            baseResponseDTO.setMessage(e.getMessage());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            baseResponseDTO.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            baseResponseDTO.setMessage("Terjadi kesalahan pada server");
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(@Valid @RequestBody UpdateUserRequestDTO userDTO, BindingResult bindingResult) {

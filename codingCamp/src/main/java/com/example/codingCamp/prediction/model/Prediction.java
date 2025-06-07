@@ -27,14 +27,14 @@ public class Prediction {
     @Column(name = "semester_siswa")
     private String semesterSiswa;
 
-    @Column(name = "scaled_nilai")
-    private Double scaledNilai;
+    @Column(name = "nilai_akhir")
+    private Integer nilaiAkhir;
 
-    @Column(name = "scaled_kehadiran")
-    private Double scaledKehadiran;
+    @Column(name = "jumlah_Ketidakhadiran")
+    private Integer jumlahKetidakhadiran;
 
-    @Column(name = "scaled_tugas")
-    private Double scaledTugas;
+    @Column(name = "persentase_tugas")
+    private Integer persentaseTugas;
 
     @Column(name = "status_prediksi")
     private String statusPrediksi;
@@ -50,4 +50,3 @@ public class Prediction {
     @Column(name = "deleted_at")
     private Date deletedAt;
 }
-
