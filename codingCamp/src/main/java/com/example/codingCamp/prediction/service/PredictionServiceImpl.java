@@ -180,11 +180,8 @@ public class PredictionServiceImpl implements PredictionService {
                 throw new RuntimeException("Persentase tugas harus dalam rentang 0-100, nilai: " + persentaseTugas);
             }
 
-            
-        
-
             payload.put("Persentase Tugas", persentaseTugas);
-            payload.put("jumlah Ketidakhadiran", performance.getJumlahKetidakhadiran());
+            payload.put("Jumlah Ketidakhadiran", performance.getJumlahKetidakhadiran());
             payload.put("Rata-rata", performance.getNilaiAkhirRataRata());
 
             log.info("Sending payload: {}", payload);
@@ -214,17 +211,17 @@ public class PredictionServiceImpl implements PredictionService {
                 }
 
                 // Cek apakah ada prediction
-                Object predictionObj = responseBody.get("prediction");
+                Object predictionObj = responseBody.getOrDefault("prediction", responseBody.get("predicted_label"));
                 if (predictionObj != null) {
                     String apiResult = predictionObj.toString();
                     log.info("API Response successful: {}", apiResult);
                     return PredictionStatus.fromString(apiResult);
                 } else {
                     log.warn("API response missing prediction field: {}", responseBody);
-                    // Log semua keys yang tersedia untuk debugging
                     log.warn("Available response keys: {}", responseBody.keySet());
-                    return PredictionStatus.STABLE; // Default fallback
+                    return calculateFallbackPrediction(performance);
                 }
+
             } else {
                 log.error("API returned unsuccessful response: {} - {}",
                         response.getStatusCode(), response.getBody());
