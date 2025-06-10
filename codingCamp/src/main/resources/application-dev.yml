@@ -4,17 +4,21 @@ spring:
   application:
     name: codingCamp
   datasource:
-    # url: ${DATABASE_URL_DEV}
     url: jdbc:postgresql://localhost:15001/codingCamp
     username: postgres
     password: secret99
 
-# Flask API URL (pindah ke level root, bukan di bawah datasource)
 flask:
   api:
     url: https://learntic-production.up.railway.app/predict
+    timeout: 30000
+    retry:
+      max: 3
 
-# Logging configuration (pindah ke level root)
+batch:
+  processing:
+    delay: 100
+
 logging:
   level:
     com.example.codingCamp.prediction: DEBUG

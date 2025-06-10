@@ -1,5 +1,6 @@
 package com.example.codingCamp.prediction.service;
 
+import com.example.codingCamp.notification.service.NotificationService;
 import com.example.codingCamp.prediction.dto.response.PredictionResponseDTO;
 import com.example.codingCamp.prediction.model.Prediction;
 import com.example.codingCamp.prediction.repository.PredictionRepository;
@@ -7,8 +8,12 @@ import com.example.codingCamp.profile.model.Student;
 import com.example.codingCamp.profile.repository.StudentRepository;
 import com.example.codingCamp.student.model.StudentPerformance;
 import com.example.codingCamp.student.repository.StudentPerformanceRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -53,6 +58,8 @@ public class PredictionServiceImpl implements PredictionService {
     private final StudentRepository studentRepository;
     private final PredictionRepository predictionRepository;
     private final RestTemplate restTemplate;
+    @Autowired
+    private NotificationService notificationService;
 
     // Update the URL to include the correct endpoint
     @Value("${flask.api.url:https://learntic-production.up.railway.app/predict}")
@@ -87,6 +94,17 @@ public class PredictionServiceImpl implements PredictionService {
         Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
         predictionRepository.save(prediction);
 
+        // kirim notif
+        notificationService.sendPredictionNotificationToStudent(prediction, siswa.getId());
+
+        // Kirim notifikasi ke parent
+        if (siswa.getOrangTua() != null) {
+            notificationService.sendPredictionNotificationToParent(prediction, siswa.getOrangTua().getId());
+        }
+
+        // Kirim notifikasi ke semua guru
+        notificationService.sendPredictionNotificationToTeachers(prediction);
+
         log.info("Prediction completed for student ID: {} with status: {}", siswaId, predictionStatus.getDisplayName());
         return toPredictionResponseDTO(prediction);
     }
@@ -120,6 +138,16 @@ public class PredictionServiceImpl implements PredictionService {
 
                 Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
                 predictionRepository.save(prediction);
+                // kirim notif
+                notificationService.sendPredictionNotificationToStudent(prediction, siswa.getId());
+
+                // Kirim notifikasi ke parent
+                if (siswa.getOrangTua() != null) {
+                    notificationService.sendPredictionNotificationToParent(prediction, siswa.getOrangTua().getId());
+                }
+
+                // Kirim notifikasi ke semua guru
+                notificationService.sendPredictionNotificationToTeachers(prediction);
 
                 results.add(toPredictionResponseDTO(prediction));
                 successCount++;
@@ -146,6 +174,22 @@ public class PredictionServiceImpl implements PredictionService {
 
         return results;
     }
+
+    @Override
+    public List<Prediction> getPredictionsByStatus(String status) {
+        return predictionRepository.findByStatusPrediksiAndDeletedAtIsNull(status);
+    }
+
+
+    @Override
+    public void deletePrediction(Long id) {
+        Prediction prediction = predictionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Prediction not found with id: " + id));
+        
+        prediction.setDeletedAt(new Date()); // Soft delete
+        predictionRepository.save(prediction);
+    }
+    
 
     private void validatePerformanceData(StudentPerformance performance) {
         if (performance.getNilaiAkhirRataRata() == null ||
@@ -275,38 +319,39 @@ public class PredictionServiceImpl implements PredictionService {
                 .build();
     }
 
-    // Method untuk test Flask API secara manual
-    public void testFlaskApi() {
-        try {
-            log.info("Testing Flask API connection...");
+    // // Method untuk test Flask API secara manual
+    // public void testFlaskApi() {
+    // try {
+    // log.info("Testing Flask API connection...");
 
-            // Test dengan data sample
-            Map<String, Object> testPayload = new HashMap<>();
-            testPayload.put("persentase Tugas", 75.0);
-            testPayload.put("jumlah Ketidakhadiran", 20);
-            testPayload.put("Rata-rata", 80.0);
+    // // Test dengan data sample
+    // Map<String, Object> testPayload = new HashMap<>();
+    // testPayload.put("persentase Tugas", 75.0);
+    // testPayload.put("jumlah Ketidakhadiran", 20);
+    // testPayload.put("Rata-rata", 80.0);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    // HttpHeaders headers = new HttpHeaders();
+    // headers.setContentType(MediaType.APPLICATION_JSON);
+    // headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(testPayload, headers);
+    // HttpEntity<Map<String, Object>> entity = new HttpEntity<>(testPayload,
+    // headers);
 
-            log.info("Sending test payload: {}", testPayload);
+    // log.info("Sending test payload: {}", testPayload);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    flaskApiUrl,
-                    entity,
-                    String.class);
+    // ResponseEntity<String> response = restTemplate.postForEntity(
+    // flaskApiUrl,
+    // entity,
+    // String.class);
 
-            log.info("Raw API Response Status: {}", response.getStatusCode());
-            log.info("Raw API Response Body: {}", response.getBody());
-            log.info("Raw API Response Headers: {}", response.getHeaders());
+    // log.info("Raw API Response Status: {}", response.getStatusCode());
+    // log.info("Raw API Response Body: {}", response.getBody());
+    // log.info("Raw API Response Headers: {}", response.getHeaders());
 
-        } catch (Exception e) {
-            log.error("Flask API test failed: {}", e.getMessage(), e);
-        }
-    }
+    // } catch (Exception e) {
+    // log.error("Flask API test failed: {}", e.getMessage(), e);
+    // }
+    // }
 
     private PredictionResponseDTO toPredictionResponseDTO(Prediction prediction) {
         return PredictionResponseDTO.builder()
