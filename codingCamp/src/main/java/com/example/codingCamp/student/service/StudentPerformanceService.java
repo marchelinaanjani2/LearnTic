@@ -14,7 +14,7 @@ public interface StudentPerformanceService {
     StudentPerformanceResponseDTO updatePerformance(Long id, UpdateStudentPerformanceRequestDTO request);
     List<StudentPerformanceResponseDTO> getAllPerformance(String sortBy);
     StudentPerformanceResponseDTO getPerformanceByStudentId(Long id);
-    void deletePerformance(Long id);
+    void deletePerformanceByStudentId(Long id);
     List<StudentPerformanceResponseDTO> createBulkPerformance(List<CreateStudentPerformanceRequestDTO> requestList);
     List<StudentPerformanceResponseDTO> importFromCSV(MultipartFile file);
     void validateCSVFormat(MultipartFile file);

@@ -10,5 +10,7 @@ public interface PredictionService {
     List<PredictionResponseDTO> predictBatch();
     List<Prediction> getPredictionsByStatus(String status);
     void deletePrediction(Long id);
+    List<PredictionResponseDTO> getAllPredictions(String sortBy);
+
 
 }

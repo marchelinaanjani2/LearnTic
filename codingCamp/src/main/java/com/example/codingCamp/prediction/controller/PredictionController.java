@@ -8,6 +8,7 @@ import com.example.codingCamp.dto.BaseResponseDTO;
 import com.example.codingCamp.prediction.dto.response.PredictionResponseDTO;
 import com.example.codingCamp.prediction.model.Prediction;
 import com.example.codingCamp.prediction.service.PredictionService;
+import com.example.codingCamp.student.dto.response.StudentPerformanceResponseDTO;
 
 import java.util.Date;
 import java.util.List;
@@ -60,6 +61,22 @@ public class PredictionController {
     public ResponseEntity<Void> deletePrediction(@PathVariable Long id) {
         predictionService.deletePrediction(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/viewall")
+    public ResponseEntity<BaseResponseDTO<List<PredictionResponseDTO>>> listPrediction(
+            @RequestParam(required = false) String sortBy) {
+        List<PredictionResponseDTO> listPredictions = predictionService
+                .getAllPredictions(sortBy);
+        BaseResponseDTO<List<PredictionResponseDTO>> response = BaseResponseDTO
+                .<List<PredictionResponseDTO>>builder()
+                .data(listPredictions)
+                .status(HttpStatus.OK.value())
+                .message("List Prediction berhasil diambil")
+                .timestamp(new Date())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     // Endpoint untuk prediksi individual

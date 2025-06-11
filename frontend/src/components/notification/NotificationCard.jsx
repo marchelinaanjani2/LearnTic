@@ -14,7 +14,7 @@ const NotificationsPanel = ({ userRole }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await api.get('/api/notification/viewall');
+        const response = await api.get('/api/notification');
         setNotifications(response.data.data);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);

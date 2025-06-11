@@ -9,7 +9,7 @@ const PerformanceDashboard = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,6 +18,7 @@ const PerformanceDashboard = ({ userRole }) => {
         const response = await api.get('/api/student-performance/viewall');
         setStudents(response.data.data || []);
         setError(null);
+        
       } catch (err) {
         console.error('Failed to fetch performance data:', err);
         setError('Failed to fetch performance data');
@@ -95,15 +96,15 @@ const PerformanceDashboard = ({ userRole }) => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {userRole === 'teacher'
+            {userRole === 'TEACHER'
               ? 'Dashboard Performa Siswa'
               : userRole === 'STUDENT'
-              ? 'Nilai Anak'
-              : 'Nilai Saya'}
+              ? 'Nilai Saya'
+              : 'Nilai Anak'}
           </h1>
           <p className="text-gray-600">Pantau perkembangan akademik secara real-time</p>
         </div>
-        {userRole === 'teacher' && (
+        {/* {userRole === 'TEACHER' && (
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
@@ -113,10 +114,10 @@ const PerformanceDashboard = ({ userRole }) => {
             <option value="XI">Kelas XI</option>
             <option value="XII">Kelas XII</option>
           </select>
-        )}
+        )} */}
       </div>
 
-      {userRole === 'teacher' && (
+      {userRole === 'TEACHER' && (
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Ringkasan Performa Kelas</h2>
           <div className="flex items-center gap-12">
@@ -186,9 +187,7 @@ const PerformanceDashboard = ({ userRole }) => {
           <div
             key={student.id}
             className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer transform hover:-translate-y-1"
-            onClick={() => {
-              console.log("Klik student:", student);
-            }}
+            
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -196,7 +195,7 @@ const PerformanceDashboard = ({ userRole }) => {
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-gray-800 text-lg">
-                  {userRole === 'student' ? 'Profil Saya' : student.namaSiswa}
+                  {userRole === 'STUDENT' ? 'Profil Saya' : student.namaSiswa}
                 </h3>
                 <p className="text-sm text-gray-500 font-medium">
                   {student.kelas} • {student.semester}

@@ -1,10 +1,15 @@
 package com.example.codingCamp.prediction.service;
 
+import org.springframework.data.domain.Sort;
+
+import com.example.codingCamp.auth.service.AuthService;
 import com.example.codingCamp.notification.service.NotificationService;
 import com.example.codingCamp.prediction.dto.response.PredictionResponseDTO;
 import com.example.codingCamp.prediction.model.Prediction;
 import com.example.codingCamp.prediction.repository.PredictionRepository;
+import com.example.codingCamp.profile.model.Parent;
 import com.example.codingCamp.profile.model.Student;
+import com.example.codingCamp.profile.repository.ParentRepository;
 import com.example.codingCamp.profile.repository.StudentRepository;
 import com.example.codingCamp.student.model.StudentPerformance;
 import com.example.codingCamp.student.repository.StudentPerformanceRepository;
@@ -29,6 +34,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PredictionServiceImpl implements PredictionService {
 
+    @Autowired
+    private ParentRepository parentRepository;
+
+    @Autowired
+    AuthService authService;
+    
     private enum PredictionStatus {
         SIGNIFICANT_INCREASE("Significant Increase Performance"),
         STABLE("Stable Performance"),
@@ -99,16 +110,18 @@ public class PredictionServiceImpl implements PredictionService {
 
         predictionRepository.save(prediction);
 
-        // kirim notif
-        notificationService.sendPredictionNotificationToStudent(prediction, siswa.getId());
+        // // kirim notif
+        // notificationService.sendPredictionNotificationToStudent(prediction,
+        // siswa.getId());
 
-        // Kirim notifikasi ke parent
-        if (siswa.getOrangTua() != null) {
-            notificationService.sendPredictionNotificationToParent(prediction, siswa.getOrangTua().getId());
-        }
+        // // Kirim notifikasi ke parent
+        // if (siswa.getOrangTua() != null) {
+        // notificationService.sendPredictionNotificationToParent(prediction,
+        // siswa.getOrangTua().getId());
+        // }
 
-        // Kirim notifikasi ke semua guru
-        notificationService.sendPredictionNotificationToTeachers(prediction);
+        // // Kirim notifikasi ke semua guru
+        // notificationService.sendPredictionNotificationToTeachers(prediction);
 
         log.info("Prediction completed for student ID: {} with status: {}", siswaId, predictionStatus.getDisplayName());
         return toPredictionResponseDTO(prediction);
@@ -181,6 +194,48 @@ public class PredictionServiceImpl implements PredictionService {
         }
 
         return results;
+    }
+
+    @Override
+    public List<PredictionResponseDTO> getAllPredictions(String sortBy) {
+        Long userId = authService.getCurrentUserId();
+        String role = authService.getCurrentUserRole();
+
+        String sortField = (sortBy != null && !sortBy.isEmpty()) ? sortBy : "createdAt";
+        Sort sort = Sort.by(Sort.Direction.DESC, sortField);
+
+        List<Prediction> predictions;
+
+        if ("STUDENT".equalsIgnoreCase(role)) {
+            // Ambil prediction berdasarkan siswaId
+            Optional<Student> studentOpt = studentRepository.findById(userId);
+            if (studentOpt.isPresent()) {
+                Student student = studentOpt.get();
+                predictions = predictionRepository.findBySiswaIdAndDeletedAtIsNull(student.getId(), sort);
+            } else {
+                predictions = Collections.emptyList();
+            }
+        } else if ("PARENT".equalsIgnoreCase(role)) {
+            // Parent lihat prediction semua anaknya
+            Optional<Parent> parentOpt = parentRepository.findById(userId);
+            if (parentOpt.isPresent()) {
+                Parent parent = parentOpt.get();
+                List<Long> anakIds = parent.getAnak().stream()
+                        .map(Student::getId)
+                        .collect(Collectors.toList());
+                predictions = predictionRepository.findBySiswaIdInAndDeletedAtIsNull(anakIds, sort);
+            } else {
+                predictions = Collections.emptyList();
+            }
+        } else if ("TEACHER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
+            predictions = predictionRepository.findAllByDeletedAtIsNull(sort);
+        } else {
+            predictions = Collections.emptyList();
+        }
+
+        return predictions.stream()
+                .map(this::toPredictionResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -324,40 +379,6 @@ public class PredictionServiceImpl implements PredictionService {
                 .createdAt(new Date())
                 .build();
     }
-
-    // // Method untuk test Flask API secara manual
-    // public void testFlaskApi() {
-    // try {
-    // log.info("Testing Flask API connection...");
-
-    // // Test dengan data sample
-    // Map<String, Object> testPayload = new HashMap<>();
-    // testPayload.put("persentase Tugas", 75.0);
-    // testPayload.put("jumlah Ketidakhadiran", 20);
-    // testPayload.put("Rata-rata", 80.0);
-
-    // HttpHeaders headers = new HttpHeaders();
-    // headers.setContentType(MediaType.APPLICATION_JSON);
-    // headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-    // HttpEntity<Map<String, Object>> entity = new HttpEntity<>(testPayload,
-    // headers);
-
-    // log.info("Sending test payload: {}", testPayload);
-
-    // ResponseEntity<String> response = restTemplate.postForEntity(
-    // flaskApiUrl,
-    // entity,
-    // String.class);
-
-    // log.info("Raw API Response Status: {}", response.getStatusCode());
-    // log.info("Raw API Response Body: {}", response.getBody());
-    // log.info("Raw API Response Headers: {}", response.getHeaders());
-
-    // } catch (Exception e) {
-    // log.error("Flask API test failed: {}", e.getMessage(), e);
-    // }
-    // }
 
     private PredictionResponseDTO toPredictionResponseDTO(Prediction prediction) {
         return PredictionResponseDTO.builder()

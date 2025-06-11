@@ -1,4 +1,3 @@
-// components/dashboard/TeacherDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Users, BookOpen, AlertTriangle, CheckCircle } from 'lucide-react';
 import DashboardCard from '../common/DashboardCard';
@@ -26,8 +25,9 @@ const TeacherDashboard = () => {
 
         // Fetch batch predictions for all students
         const predictionsResponse = await api.get('api/prediction/batch');
-        const predictionsData = Array.isArray(predictionsResponse.data) ? predictionsResponse.data : predictionsResponse.data.data || [];
+        const predictionsData = Array.isArray(predictionsResponse.data.data) ? predictionsResponse.data.data : [];
         setPredictions(predictionsData);
+
       } catch (err) {
         console.error('Failed to fetch students:', err);
         setStudents([]);
@@ -40,35 +40,29 @@ const TeacherDashboard = () => {
     fetchData();
   }, []);
 
+  // Helper functions
+  const getPredictionByStudentId = (studentId) => {
+    return predictions.find(p => p.siswaId === studentId);
+  };
+
+  const getStatusPrediksi = (studentId) => {
+    const prediction = getPredictionByStudentId(studentId);
+    return prediction ? prediction.statusPrediksi : 'Belum ada prediksi';
+  };
+
+  const getSemesterFromPrediction = (studentId) => {
+    const prediction = getPredictionByStudentId(studentId);
+    return prediction ? prediction.semesterSiswa : '-';
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
-      case 'excellent': return 'text-green-600';
-      case 'good': return 'text-blue-600';
-      case 'warning': return 'text-yellow-600';
-      case 'danger': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'Significant Increase Performance': return 'text-green-600';
+      case 'Stable Performance': return 'text-blue-600';
+      case 'Significant Decrease Performance': return 'text-yellow-600';
+      case 'Belum ada prediksi': return 'text-gray-400';
+      default: return 'text-red-600';
     }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'excellent': return 'Sangat Baik';
-      case 'good': return 'Baik';
-      case 'warning': return 'Perlu Perhatian';
-      case 'danger': return 'Bahaya';
-      default: return 'Unknown';
-    }
-  };
-
-  const getStatusFromPrediction = (studentId) => {
-    const prediction = predictions.find(p => p.studentId === studentId);
-    if (!prediction) return 'unknown';
-    
-    // Assuming prediction returns risk level or performance status
-    if (prediction.statusPrediksi ===  'Signficant Increase Performance') return 'excellent';
-    if (prediction.statusPrediksi ===  'Stable Performance') return 'good';
-    if (prediction.statusPrediksi ===  'Significant Decrease performance') return 'warning';
-    return 'danger';
   };
 
   if (loading) {
@@ -80,52 +74,45 @@ const TeacherDashboard = () => {
   }
 
   const studentCount = students.length;
-  const warningCount = students.filter(s => getStatusFromPrediction(s.id) === 'warning').length;
-  const excellentCount = students.filter(s => getStatusFromPrediction(s.id) === 'excellent').length;
-  const stableCount = students.filter(s => getStatusFromPrediction(s.id) === 'good').length;
 
+  const countByStatus = (status) => {
+    return students.filter(s => getStatusPrediksi(s.id) === status).length;
+  };
+
+  const significantIncreaseCount = countByStatus('Significant Increase Performance');
+  const stableCount = countByStatus('Stable Performance');
+  const significantDecreaseCount = countByStatus('Significant Decrease Performance');
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Dashboard Guru</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <DashboardCard
           title="Total Siswa"
           value={studentCount}
           subtitle="Siswa aktif"
           color="bg-gradient-to-br from-blue-500 to-blue-600"
-
-          onClick={() => onMenuChange('students')}
-
-          
           icon={Users}
         />
         <DashboardCard
-          title="Total Users"
-          value={allUsers.length}
-          subtitle="Semua pengguna"
-          color="bg-purple-600"
-          icon={BookOpen}
-        />
-        <DashboardCard
           title="Perlu Perhatian"
-          value={warningCount}
+          value={significantDecreaseCount}
           subtitle="Siswa berisiko"
           color="bg-gradient-to-br from-orange-500 to-red-500"
           icon={AlertTriangle}
         />
         <DashboardCard
           title="Prestasi Baik"
-          value={excellentCount}
+          value={significantIncreaseCount}
           subtitle="Siswa berprestasi"
           color="bg-gradient-to-br from-emerald-500 to-emerald-600"
           icon={CheckCircle}
         />
-         <DashboardCard
-          title="Baik"
+        <DashboardCard
+          title="Stabil"
           value={stableCount}
-          subtitle="Siswa perlu peningkatan"
+          subtitle="Siswa stabil"
           color="bg-green-600"
           icon={CheckCircle}
         />
@@ -145,35 +132,30 @@ const TeacherDashboard = () => {
                   <th className="text-left py-3">ID</th>
                   <th className="text-left py-3">Nama Siswa</th>
                   <th className="text-left py-3">Kelas</th>
+                  <th className="text-left py-3">Semester</th>
                   <th className="text-left py-3">Status Prediksi</th>
-                  <th className="text-left py-3">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((student) => {
-                  const status = getStatusFromPrediction(student.id);
+                  const status = getStatusPrediksi(student.id);
+                  const semester = getSemesterFromPrediction(student.id);
                   return (
                     <tr key={student.id} className="border-b hover:bg-gray-50">
                       <td className="py-3">{student.id}</td>
                       <td className="py-3">{student.name || student.nama || `Siswa ${student.id}`}</td>
                       <td className="py-3">{student.kelas || student.class || 'XI'}</td>
+                      <td className="py-3">{semester}</td>
                       <td className="py-3">
                         <span className={`font-medium ${getStatusColor(status)}`}>
-                          {getStatusText(status)}
+                          {status}
                         </span>
-                      </td>
-                      <td className="py-3">
-                        <button 
-                          className="text-blue-600 hover:text-blue-800 mr-2"
-                          onClick={() => console.log('View student:', student.id)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
+
             </table>
           </div>
         )}

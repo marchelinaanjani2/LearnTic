@@ -2,6 +2,8 @@ package com.example.codingCamp.student.repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import com.example.codingCamp.profile.model.Student;
 import com.example.codingCamp.student.model.StudentPerformance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,5 +17,7 @@ public interface StudentPerformanceRepository extends JpaRepository<StudentPerfo
 
     List<StudentPerformance> findAllByDeletedAtIsNullAndStudentIsNotNull();
     Optional<StudentPerformance> findByStudent_Id(Long studentId);
+    List<StudentPerformance> findByStudent_Id(Long studentId, Sort sort);
 
+    List<StudentPerformance> findByStudentIn(List<Student> students, Sort sort);
 }

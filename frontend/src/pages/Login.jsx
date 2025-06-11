@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import dewanspaceLogo from '../assets/dewanspace-logo.png';
+import learnTic from '../assets/logo/logo.png';
 import '../styles/login.css'
 
 const Login = () => {
@@ -22,7 +22,7 @@ const Login = () => {
 
     const success = await login(email, password);
     if (success) {
-      navigate('/dashboard');
+      navigate('/');
     } else {
       setError('Email or Username atau password salah');
     }
@@ -32,7 +32,7 @@ const Login = () => {
     <div className="login-container">
       <div className="login-form-container">
         <div className="logo-container">
-          <img src={dewanspaceLogo} alt="Dewanspace Logo" className="logo" />
+          <img src={learnTic} alt="LearnTic Logo" className="logo" />
         </div>
         
         <h2 className="login-title">Sign in to your account</h2>

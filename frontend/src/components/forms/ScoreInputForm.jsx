@@ -5,11 +5,9 @@ import api from '../../api/Axios';
 const ScoreInputForm = () => {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
-  const [absenceCount, setAbsenceCount] = useState(0);
-  const [assignmentPercentage, setAssignmentPercentage] = useState(0);
-  const [semester, setSemester] = useState(null);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [selectedSemester, setSelectedSemester] = useState(null);
+  const [absenceCount, setAbsenceCount] = useState('');
+  const [assignmentPercentage, setAssignmentPercentage] = useState('');
+  const [semester, setSemester] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [csvFile, setCsvFile] = useState(null);
@@ -22,19 +20,17 @@ const ScoreInputForm = () => {
     'Informatika', 'Seni Musik', 'Bahasa Indonesia'
   ];
 
-  const [examScores, setExamScores] = useState({});
-  const [taskScores, setTaskScores] = useState({});
-  const [quizScores, setQuizScores] = useState({});
-
-  useEffect(() => {
+  const generateInitialScores = () => {
     const initialScores = {};
     subjects.forEach(subject => {
       initialScores[subject] = '';
     });
-    setExamScores(initialScores);
-    setTaskScores(initialScores);
-    setQuizScores(initialScores);
-  }, []);
+    return initialScores;
+  };
+
+  const [examScores, setExamScores] = useState(generateInitialScores());
+  const [taskScores, setTaskScores] = useState(generateInitialScores());
+  const [quizScores, setQuizScores] = useState(generateInitialScores());
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -42,6 +38,8 @@ const ScoreInputForm = () => {
         const response = await api.get('api/student');
         const studentsData = Array.isArray(response.data) ? response.data : response.data.data || [];
         setStudents(studentsData);
+
+        const predictionResponse = await api.get('api/prediction/batch');
         setLoading(false);
       } catch (error) {
         console.error('Error fetching students:', error);
@@ -50,7 +48,6 @@ const ScoreInputForm = () => {
         setLoading(false);
       }
     };
-
     fetchStudents();
   }, []);
 
@@ -69,8 +66,7 @@ const ScoreInputForm = () => {
     e.preventDefault();
 
     if (!csvFile) {
-      // validasi form manual
-      if (!selectedStudent || !absenceCount || !assignmentPercentage || !semester) {
+      if (!selectedStudent || absenceCount === '' || assignmentPercentage === '' || semester === '') {
         alert("Mohon lengkapi semua field form");
         return;
       }
@@ -90,8 +86,7 @@ const ScoreInputForm = () => {
         nilaiKuisPerMapel: formatScores(quizScores),
         jumlahKetidakhadiran: parseInt(absenceCount) || 0,
         persentaseTugas: parseInt(assignmentPercentage) || 0,
-        kelas: selectedClass,
-        semester: selectedSemester
+        semester: semester
       };
 
       try {
@@ -104,7 +99,6 @@ const ScoreInputForm = () => {
         alert('Gagal menyimpan nilai');
       }
     } else {
-      // kirim file CSV
       await handleCsvUpload();
     }
   };
@@ -114,28 +108,22 @@ const ScoreInputForm = () => {
     setAbsenceCount('');
     setAssignmentPercentage('');
     setSemester('');
-    setSelectedClass('');
-    setSelectedSemester('');
     setExamScores(generateInitialScores());
     setTaskScores(generateInitialScores());
     setQuizScores(generateInitialScores());
     setCsvFile(null);
   };
-  
+
   const handleCsvUpload = async () => {
     if (!csvFile) {
       alert('Silakan pilih file CSV terlebih dahulu');
       return;
     }
-
     const formData = new FormData();
     formData.append('file', csvFile);
-
     try {
       const response = await api.post('api/student-performance/upload-csv', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('Upload CSV berhasil!');
       console.log('CSV upload response:', response.data);
@@ -146,13 +134,8 @@ const ScoreInputForm = () => {
     }
   };
 
-  if (loading) {
-    return <div className="p-6">Memuat data siswa...</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-500">{error}</div>;
-  }
+  if (loading) return <div className="p-6">Memuat data siswa...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
     <div className="p-6">
@@ -160,11 +143,7 @@ const ScoreInputForm = () => {
 
       {/* Upload CSV */}
       <div className="mb-8 p-4 bg-gray-100 rounded-lg flex items-center gap-4">
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) => setCsvFile(e.target.files[0])}
-        />
+        <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files[0])} />
         <button
           type="button"
           onClick={handleCsvUpload}
@@ -226,98 +205,45 @@ const ScoreInputForm = () => {
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
+              <option value="">Pilih Semester</option>
               <option value="ganjil">Ganjil</option>
               <option value="genap">Genap</option>
             </select>
           </div>
         </div>
 
-        {/* Score Input Sections */}
+        {/* Scores */}
         <div className="space-y-8">
-          {/* Exam Scores */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-600">Nilai Ujian</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {subjects.map((subject) => (
-                <div key={`exam-${subject}`}>
-                  <label className="block text-sm font-medium mb-1">{subject}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={examScores[subject] || ''}
-                    onChange={(e) => handleScoreChange(subject, 'exam', e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              ))}
+          {[{title: 'Nilai Ujian', state: examScores, setter: setExamScores, color: 'blue'},
+            {title: 'Nilai Tugas', state: taskScores, setter: setTaskScores, color: 'green'},
+            {title: 'Nilai Kuis', state: quizScores, setter: setQuizScores, color: 'purple'}
+          ].map(({title, state, setter, color}) => (
+            <div key={title}>
+              <h3 className={`text-lg font-semibold mb-4 text-${color}-600`}>{title}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {subjects.map((subject) => (
+                  <div key={`${title}-${subject}`}>
+                    <label className="block text-sm font-medium mb-1">{subject}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={state[subject] || ''}
+                      onChange={(e) => handleScoreChange(subject, title.split(' ')[1].toLowerCase(), e.target.value)}
+                      className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-${color}-500`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Task Scores */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-green-600">Nilai Tugas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {subjects.map((subject) => (
-                <div key={`task-${subject}`}>
-                  <label className="block text-sm font-medium mb-1">{subject}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={taskScores[subject] || ''}
-                    onChange={(e) => handleScoreChange(subject, 'task', e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quiz Scores */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-purple-600">Nilai Kuis</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {subjects.map((subject) => (
-                <div key={`quiz-${subject}`}>
-                  <label className="block text-sm font-medium mb-1">{subject}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={quizScores[subject] || ''}
-                    onChange={(e) => handleScoreChange(subject, 'quiz', e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="mt-8 flex gap-4">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <CheckCircle className="w-4 h-4" />
-            Simpan Nilai
+          <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" /> Simpan Nilai
           </button>
-          <button
-            type="button"
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
-            onClick={() => {
-              setSelectedStudent('');
-              setAbsenceCount(0);
-              setAssignmentPercentage(0);
-              setSemester('ganjil');
-              const emptyScores = {};
-              subjects.forEach(subject => (emptyScores[subject] = ''));
-              setExamScores(emptyScores);
-              setTaskScores(emptyScores);
-              setQuizScores(emptyScores);
-            }}
-          >
+          <button type="button" className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600" onClick={resetForm}>
             Reset Form
           </button>
         </div>
