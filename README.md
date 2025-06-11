@@ -7,6 +7,7 @@ dataset publik yang dapat diolah untuk mendukun tujuan projek kami. Pembuatan du
 
 Berikut variabel dataset, dan penjelasannya:
 - Nilai mata pelajaran saat ini
+  
 | Kolom                                       | Tipe Data | Penjelasan                           |
 | ------------------------------------------- | --------- | ------------------------------------ |
 | Pendidikan Agama                            | `int64`   | Nilai pelajaran Pendidikan Agama     |
@@ -28,6 +29,7 @@ Berikut variabel dataset, dan penjelasannya:
 | **Rata-rata**                               | `float64` | Rata-rata semua nilai mata pelajaran |
 
 - Nilai mata pelajaran semester berikutnya
+  
 | Kolom                                                  | Tipe Data | Penjelasan                                  |
 | ------------------------------------------------------ | --------- | ------------------------------------------- |
 | Pendidikan Agama (Next Sem)                            | `int64`   | Nilai Pendidikan Agama semester berikutnya  |
@@ -48,11 +50,13 @@ Berikut variabel dataset, dan penjelasannya:
 | Bahasa Indonesia (Next Sem)                            | `int64`   | Nilai Bahasa Indonesia semester berikut     |
 | **Rata-rata (Next Sem)**                               | `float64` | Rata-rata semua nilai semester berikut      |
 - Kategori performa
+  
 | Kolom                        | Tipe Data | Penjelasan                                                |
 | ---------------------------- | --------- | --------------------------------------------------------- |
 | Kategori Performa            | `object`  | Kategori performa akademik saat ini (mis. Low, Mid, High) |
 | Kategori Performa (Next Sem) | `object`  | Kategori performa semester berikutnya                     |
 - Data Tambahan
+  
 | Kolom                 | Tipe Data | Penjelasan                                       |
 | --------------------- | --------- | ------------------------------------------------ |
 | Jumlah Ketidakhadiran | `int64`   | Total hari siswa tidak hadir                     |
