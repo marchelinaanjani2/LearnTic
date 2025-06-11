@@ -90,8 +90,13 @@ public class PredictionServiceImpl implements PredictionService {
         // Buat prediksi
         PredictionStatus predictionStatus = callFlaskPredictionApi(performance);
 
+        // Update status prediksi di StudentPerformance
+        performance.setStatusPrediksi(predictionStatus.getDisplayName());
+        performance.setSubmittedForPrediction(true);
+        performanceRepository.save(performance);
         // Simpan hasil prediksi
         Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
+
         predictionRepository.save(prediction);
 
         // kirim notif
@@ -137,6 +142,9 @@ public class PredictionServiceImpl implements PredictionService {
                 PredictionStatus predictionStatus = callFlaskPredictionApi(performance);
 
                 Prediction prediction = buildPrediction(siswa, performance, predictionStatus);
+                performance.setStatusPrediksi(predictionStatus.getDisplayName());
+                performance.setSubmittedForPrediction(true);
+                performanceRepository.save(performance);
                 predictionRepository.save(prediction);
                 // kirim notif
                 notificationService.sendPredictionNotificationToStudent(prediction, siswa.getId());
@@ -180,16 +188,14 @@ public class PredictionServiceImpl implements PredictionService {
         return predictionRepository.findByStatusPrediksiAndDeletedAtIsNull(status);
     }
 
-
     @Override
     public void deletePrediction(Long id) {
         Prediction prediction = predictionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Prediction not found with id: " + id));
-        
+
         prediction.setDeletedAt(new Date()); // Soft delete
         predictionRepository.save(prediction);
     }
-    
 
     private void validatePerformanceData(StudentPerformance performance) {
         if (performance.getNilaiAkhirRataRata() == null ||

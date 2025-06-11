@@ -1,0 +1,217 @@
+@import "tailwindcss";
+@import 'datatables.net-dt';
+@import 'datatables.net-responsive-dt';
+@import 'datatables.net-select-dt';
+
+
+/* Warna latar belakang halaman */
+body,
+html {
+  background-color: #EFF6FF;
+  /* Warna pastel biru muda */
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.table-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Warna putih untuk kotak konten */
+.projects-content {
+  background-color: rgb(218, 228, 253);
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 1000px;
+}
+
+/* Header */
+.projects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* Search & Filter */
+.projects-filter {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+/* Table Styling */
+.ant-table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ant-table-thead>tr>th {
+  background-color: white !important;
+}
+
+
+.ant-table-tbody>tr:nth-child(odd) {
+  background-color: #fbfdff !important;
+}
+
+.ant-table-tbody>tr:nth-child(even) {
+  background-color: #fbfdff !important;
+}
+
+.ant-table-tbody>tr:hover>td {
+  background-color: #EFF6FF !important;
+}
+
+/* Footer */
+.projects-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  color: #555;
+}
+
+/* Warna sesuai role */
+
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  min-width: 40px;
+  min-height: 40px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-label.super_admin {
+  border-color: #4A90E2;
+  background-color: #D6E9FF; /* versi terang dari #4A90E2 */
+}
+
+.status-label.pm {
+  border-color: #E67E22;
+  background-color: #F9E5C9; /* versi terang dari #E67E22 */
+}
+
+.status-label.hr {
+  border-color: #27AE60;
+  background-color: #C8E6C9; /* versi terang dari #27AE60 */
+}
+
+.status-label.freelancer {
+  border-color: #9B59B6;
+  background-color: #E6D6F0; /* versi terang dari #9B59B6 */
+}
+
+.status-label.manajemen {
+  border-color: #E74C3C;
+  background-color: #F9C7C5; /* versi terang dari #E74C3C */
+}
+
+
+
+
+.status-label {
+  background-color: transparent;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 600;
+  /* opacity: 0.8; */
+  text-transform: capitalize;
+  color: black;
+}
+
+/* Border & Background sesuai status */
+.status-label.not-started {
+  border-color: #B0BEC5;       /* Abu-abu Terang */
+  background-color: #CFD8DC;
+}
+
+.status-label.finished {
+  border-color: #8BC34A;       /* Hijau Terang */
+  background-color: #DCEDC8;
+}
+
+.status-label.billing {
+  border-color: #FFB74D;       /* Oranye Terang */
+  background-color: #FFE0B2;
+}
+
+.status-label.development {
+  border-color: #64B5F6;       /* Biru Terang */
+  background-color: #BBDEFB;
+}
+
+.status-label.marketing {
+  border-color: #BA68C8;       /* Ungu Terang */
+  background-color: #E1BEE7;
+}
+
+.status-label.maintenance {
+  border-color: #FFEB3B;       /* Kuning Terang */
+  background-color: #FFF9C4;
+  
+}
+
+.status-label.design {
+  border-color: #F06292;       /* Pink Terang */
+  background-color: #F8BBD0;
+}
+
+.status-label.html {
+    border-color: #81D4FA;       /* Biru Muda (ganti dari coklat) */
+  background-color: #E1F5FE;
+}
+
+.status-label.support {
+  border-color: #4DB6AC;       /* Teal Terang */
+  background-color: #B2DFDB;
+}
+
+.status-label.cancelled {
+  border-color: #E57373;       /* Merah Terang */
+  background-color: #FFCDD2;
+}
+
+
+/* Merah Terang */
+
+/* Overlay Modal */
+.react-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Konten Modal */
+.react-modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+}

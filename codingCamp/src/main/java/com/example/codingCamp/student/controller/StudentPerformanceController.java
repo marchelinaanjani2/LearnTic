@@ -69,7 +69,7 @@ public class StudentPerformanceController {
         @GetMapping("/detail/{id}")
         public ResponseEntity<BaseResponseDTO<StudentPerformanceResponseDTO>> detailPerformance(
                         @PathVariable("id") Long id) {
-                StudentPerformanceResponseDTO studentPerformance = studentPerformanceService.getPerformanceById(id);
+                StudentPerformanceResponseDTO studentPerformance = studentPerformanceService.getPerformanceByStudentId(id);
                 if (studentPerformance == null) {
                         BaseResponseDTO<StudentPerformanceResponseDTO> errorResponse = BaseResponseDTO
                                         .<StudentPerformanceResponseDTO>builder()

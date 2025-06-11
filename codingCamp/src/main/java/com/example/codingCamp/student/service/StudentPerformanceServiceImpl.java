@@ -310,10 +310,10 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     }
 
     @Override
-    public StudentPerformanceResponseDTO getPerformanceById(Long id) {
-        StudentPerformance performance = studentPerformanceRepository.findById(id)
-                .orElseThrow(
-                        () -> new NoResourceFoundException("StudentPerformance dengan ID " + id + " tidak ditemukan"));
+    public StudentPerformanceResponseDTO getPerformanceByStudentId(Long studentId) {
+        StudentPerformance performance = studentPerformanceRepository.findByStudent_Id(studentId)
+                .orElseThrow(() -> new NoResourceFoundException(
+                        "Performance untuk siswa dengan ID " + studentId + " tidak ditemukan"));
 
         return toStudentPerformanceResponse(performance);
     }
@@ -324,7 +324,7 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
 
         return (int) Math.round(mapel.values().stream()
                 .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue) 
+                .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0.0));
     }

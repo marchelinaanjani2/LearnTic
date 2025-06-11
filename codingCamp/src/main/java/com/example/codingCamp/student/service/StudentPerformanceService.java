@@ -7,16 +7,18 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.codingCamp.student.dto.request.CreateStudentPerformanceRequestDTO;
 import com.example.codingCamp.student.dto.request.UpdateStudentPerformanceRequestDTO;
 import com.example.codingCamp.student.dto.response.StudentPerformanceResponseDTO;
+import com.example.codingCamp.student.model.StudentPerformance;
 
 public interface StudentPerformanceService {
     StudentPerformanceResponseDTO createPerformance(CreateStudentPerformanceRequestDTO request);
     StudentPerformanceResponseDTO updatePerformance(Long id, UpdateStudentPerformanceRequestDTO request);
     List<StudentPerformanceResponseDTO> getAllPerformance(String sortBy);
-    StudentPerformanceResponseDTO getPerformanceById(Long id);
+    StudentPerformanceResponseDTO getPerformanceByStudentId(Long id);
     void deletePerformance(Long id);
     List<StudentPerformanceResponseDTO> createBulkPerformance(List<CreateStudentPerformanceRequestDTO> requestList);
     List<StudentPerformanceResponseDTO> importFromCSV(MultipartFile file);
     void validateCSVFormat(MultipartFile file);
+
 
 
 }
