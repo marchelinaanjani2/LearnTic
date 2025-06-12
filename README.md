@@ -78,7 +78,8 @@ Berikut variabel dataset, dan penjelasannya:
 ### Pre-processing Cleaned Data
 - Splitting dataset 60/20/20 berturut-turut untuk data training,test, dan valiadasi.
 - Mengaplikasi oversamplifier menggunakan SMOTE untuk fitur label minoritas
-- Melakukan scaling terhadap data input (Rata-rata,Persentase Tugas, dan Jumlah Ketidakhadiran) 
+- Melakukan scaling terhadap data input (Rata-rata,Persentase Tugas, dan Jumlah Ketidakhadiran)
+- Pengaplikasian Label Encoder terhadap target fitur 
  
 ### Modelling, Training & Evaluation
 - Modelling menggunakan algoritma FNN
