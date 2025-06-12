@@ -90,3 +90,25 @@ Berikut variabel dataset, dan penjelasannya:
 ### Deployment model
 - Deploy model menggunakan Railway
 ## Full-Stack Web Development
+### Front-End (React.js):
+- Membuat project React.js menggunakan create-react-app sebagai starter template.
+- Membuat halaman login dengan CSS sederhana agar user dapat masuk ke dalam sistem menggunakan akun role-based.
+- Membuat halaman dashboard untuk menampilkan data ringkasan performa siswa.
+- Membuat halaman performance untuk menampilkan data detail dari performa siswa.
+- Mengimplementasikan fitur search berdasarkan nama.
+- Menghubungkan React Front-End dengan Back-End menggunakan Axios untuk melakukan request ke REST API.
+- Membuat form input data siswa dan performa nilai yang terhubung dengan API backend.
+- Mengatur validasi form pada saat input data, termasuk validasi data kosong, angka negatif, dan nilai di luar batas.
+- Menambahkan fitur tampilan notifikasi status prediksi performa siswa secara real-time dari data yang dikirim backend.
+
+### Back-End (Spring Boot):
+- Membuat project backend dengan Spring Initializr dengan modul Web, JPA, Security, dan Lombok.
+- Mendesain struktur database untuk menyimpan data siswa, nilai, prediksi performa, dan role user.
+- Membuat entity class seperti Student, StudentPerformance, Prediction, dan Profile dan Notification untuk merepresentasikan tabel database.
+- Mengembangkan service untuk melakukan perhitungan prediksi performa siswa (mengambil output dari model ML).
+- Membuat REST API endpoint menggunakan Spring MVC (@RestController) untuk berbagai kebutuhan CRUD data siswa, nilai, dan prediksi.
+- Mengatur autentikasi login dengan Spring Security, termasuk penerapan JWT token untuk menjaga keamanan akses API.
+- Mengintegrasikan proses pengiriman notifikasi ke guru yang berisi hasil prediksi performa siswa, dengan format bahasa yang human-readable.
+- Melakukan error handling pada sisi server menggunakan exception handling Spring Boot (@ControllerAdvice).
+- Melakukan integrasi dengan database MySQL/PostgreSQL melalui JPA Repository.
+- Melakukan testing sederhana terhadap API untuk memastikan semua endpoint berjalan sesuai spesifikasi.
