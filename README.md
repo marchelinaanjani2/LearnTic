@@ -76,7 +76,17 @@ Berikut variabel dataset, dan penjelasannya:
 -  Replace Outliers
 - Drop kolom yang tidak relevan/tidak penting/tidak terdapat indikasi hubungan yang kuat dengan target fitur
 ### Pre-processing Cleaned Data
-### Modelling & Training
+- Splitting dataset 60/20/20 berturut-turut untuk data training,test, dan valiadasi.
+- Mengaplikasi oversamplifier menggunakan SMOTE untuk fitur label minoritas
+- Melakukan scaling terhadap data input (Rata-rata,Persentase Tugas, dan Jumlah Ketidakhadiran) 
+ 
+### Modelling, Training & Evaluation
+- Modelling menggunakan algoritma FNN
+- Evaluasi pelatihan data menggunakan accuracy dan loss pada data validasi dan train
+- Evaluasi mode dengan test dataset dengan metrik accuracy, precision, recall, dan f1-score
+- Confusion Matrix terhadap predicted label dan actual label
 ### Inference
+- Membuat kode inference yang sederhana
 ### Deployment model
+- Deploy model menggunakan Railway
 ## Full-Stack Web Development
