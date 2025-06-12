@@ -1,6 +1,9 @@
 package com.example.codingCamp.student.service;
 
+import com.example.codingCamp.auth.service.AuthService;
+import com.example.codingCamp.profile.model.Parent;
 import com.example.codingCamp.profile.model.Student;
+import com.example.codingCamp.profile.repository.ParentRepository;
 import com.example.codingCamp.profile.repository.StudentRepository;
 import com.example.codingCamp.student.dto.request.CreateStudentPerformanceRequestDTO;
 import com.example.codingCamp.student.dto.request.UpdateStudentPerformanceRequestDTO;
@@ -10,6 +13,7 @@ import com.example.codingCamp.student.repository.StudentPerformanceRepository;
 import com.opencsv.CSVReader;
 import java.io.IOException;
 
+import org.hibernate.sql.ast.tree.update.Assignment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +42,12 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private ParentRepository parentRepository;
+
+    @Autowired
+    AuthService authService;
 
     // kalo pilih inputnya per siswa
     @Override
@@ -213,7 +223,6 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     }
 
     // Helper method untuk parsing CSV line dengan handling quotes
-    // Ganti method parseCSVLine() dengan yang lebih robust
     private String[] parseCSVLine(String line) {
         List<String> result = new ArrayList<>();
         boolean inQuotes = false;
@@ -250,12 +259,12 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     // Helper method untuk parsing tanggal
     private Date parseDate(String dateStr) {
         try {
-            // Coba format M/d/yyyy (seperti 6/1/2024)
+            // format M/d/yyyy (seperti 6/1/2024)
             SimpleDateFormat sdf1 = new SimpleDateFormat("M/d/yyyy");
             return sdf1.parse(dateStr);
         } catch (Exception e1) {
             try {
-                // Coba format yyyy-MM-dd
+                // format yyyy-MM-dd
                 SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
                 return sdf2.parse(dateStr);
             } catch (Exception e2) {
@@ -266,10 +275,10 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     }
 
     @Override
-    public StudentPerformanceResponseDTO updatePerformance(Long id, UpdateStudentPerformanceRequestDTO request) {
-        StudentPerformance performance = studentPerformanceRepository.findById(id)
-                .orElseThrow(
-                        () -> new NoResourceFoundException("StudentPerformance dengan ID " + id + " tidak ditemukan"));
+    public StudentPerformanceResponseDTO updatePerformance(Long studentId, UpdateStudentPerformanceRequestDTO request) {
+        StudentPerformance performance = studentPerformanceRepository.findByStudent_Id(studentId)
+                .orElseThrow(() -> new NoResourceFoundException(
+                        "Performance untuk siswa dengan ID " + studentId + " tidak ditemukan"));
 
         Student student = studentRepository.findById(request.getSiswaId())
                 .orElseThrow(() -> new NoResourceFoundException(
@@ -299,10 +308,40 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
 
     @Override
     public List<StudentPerformanceResponseDTO> getAllPerformance(String sortBy) {
+        Long userId = authService.getCurrentUserId();
+        String role = authService.getCurrentUserRole();
+
         String sortField = (sortBy != null && !sortBy.isEmpty()) ? sortBy : "updatedAt";
         Sort sort = Sort.by(Sort.Direction.DESC, sortField);
 
-        List<StudentPerformance> performanceList = studentPerformanceRepository.findAll(sort);
+        List<StudentPerformance> performanceList;
+
+        if ("STUDENT".equalsIgnoreCase(role)) {
+            // Cari student entity berdasarkan user id
+            Optional<Student> studentOpt = studentRepository.findById(userId);
+            if (studentOpt.isPresent()) {
+                Student student = studentOpt.get();
+                performanceList = studentPerformanceRepository.findByStudent_Id(student.getId(), sort);
+            } else {
+                performanceList = Collections.emptyList();
+            }
+        } else if ("PARENT".equalsIgnoreCase(role)) {
+            // Cari parent entity berdasarkan user id
+            Optional<Parent> parentOpt = parentRepository.findById(userId);
+            if (parentOpt.isPresent()) {
+                Parent parent = parentOpt.get();
+                List<Student> anakList = parent.getAnak();
+                performanceList = studentPerformanceRepository.findByStudentIn(anakList, sort);
+            } else {
+                performanceList = Collections.emptyList();
+            }
+        } else if ("TEACHER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
+            // Teacher dan Admin bisa lihat semua
+            performanceList = studentPerformanceRepository.findAll(sort);
+        } else {
+            // Role tidak dikenali
+            performanceList = Collections.emptyList();
+        }
 
         return performanceList.stream()
                 .map(this::toStudentPerformanceResponse)
@@ -310,10 +349,10 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     }
 
     @Override
-    public StudentPerformanceResponseDTO getPerformanceById(Long id) {
-        StudentPerformance performance = studentPerformanceRepository.findById(id)
-                .orElseThrow(
-                        () -> new NoResourceFoundException("StudentPerformance dengan ID " + id + " tidak ditemukan"));
+    public StudentPerformanceResponseDTO getPerformanceByStudentId(Long studentId) {
+        StudentPerformance performance = studentPerformanceRepository.findByStudent_Id(studentId)
+                .orElseThrow(() -> new NoResourceFoundException(
+                        "Performance untuk siswa dengan ID " + studentId + " tidak ditemukan"));
 
         return toStudentPerformanceResponse(performance);
     }
@@ -324,7 +363,7 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
 
         return (int) Math.round(mapel.values().stream()
                 .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue) 
+                .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0.0));
     }
@@ -348,10 +387,10 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
     }
 
     @Override
-    public void deletePerformance(Long id) {
-        StudentPerformance performance = studentPerformanceRepository.findById(id)
-                .orElseThrow(
-                        () -> new NoResourceFoundException("StudentPerformance dengan ID " + id + " tidak ditemukan"));
+    public void deletePerformanceByStudentId(Long studentId) {
+        StudentPerformance performance = studentPerformanceRepository.findByStudent_Id(studentId)
+                .orElseThrow(() -> new NoResourceFoundException(
+                        "Performance untuk siswa dengan ID " + studentId + " tidak ditemukan"));
 
         studentPerformanceRepository.delete(performance);
     }

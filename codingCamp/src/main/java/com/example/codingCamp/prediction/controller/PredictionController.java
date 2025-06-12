@@ -1,11 +1,14 @@
 package com.example.codingCamp.prediction.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.codingCamp.dto.BaseResponseDTO;
 import com.example.codingCamp.prediction.dto.response.PredictionResponseDTO;
+import com.example.codingCamp.prediction.model.Prediction;
 import com.example.codingCamp.prediction.service.PredictionService;
+import com.example.codingCamp.student.dto.response.StudentPerformanceResponseDTO;
 
 import java.util.Date;
 import java.util.List;
@@ -13,6 +16,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +50,33 @@ public class PredictionController {
             responseDTO.setTimestamp(new Date());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseDTO);
         }
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<List<Prediction>> getPredictionsByStatus(@RequestParam String status) {
+        return ResponseEntity.ok(predictionService.getPredictionsByStatus(status));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePrediction(@PathVariable Long id) {
+        predictionService.deletePrediction(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/viewall")
+    public ResponseEntity<BaseResponseDTO<List<PredictionResponseDTO>>> listPrediction(
+            @RequestParam(required = false) String sortBy) {
+        List<PredictionResponseDTO> listPredictions = predictionService
+                .getAllPredictions(sortBy);
+        BaseResponseDTO<List<PredictionResponseDTO>> response = BaseResponseDTO
+                .<List<PredictionResponseDTO>>builder()
+                .data(listPredictions)
+                .status(HttpStatus.OK.value())
+                .message("List Prediction berhasil diambil")
+                .timestamp(new Date())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     // Endpoint untuk prediksi individual

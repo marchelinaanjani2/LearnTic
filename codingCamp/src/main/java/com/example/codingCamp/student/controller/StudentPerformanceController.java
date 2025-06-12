@@ -69,7 +69,7 @@ public class StudentPerformanceController {
         @GetMapping("/detail/{id}")
         public ResponseEntity<BaseResponseDTO<StudentPerformanceResponseDTO>> detailPerformance(
                         @PathVariable("id") Long id) {
-                StudentPerformanceResponseDTO studentPerformance = studentPerformanceService.getPerformanceById(id);
+                StudentPerformanceResponseDTO studentPerformance = studentPerformanceService.getPerformanceByStudentId(id);
                 if (studentPerformance == null) {
                         BaseResponseDTO<StudentPerformanceResponseDTO> errorResponse = BaseResponseDTO
                                         .<StudentPerformanceResponseDTO>builder()
@@ -85,7 +85,7 @@ public class StudentPerformanceController {
                                 .<StudentPerformanceResponseDTO>builder()
                                 .data(studentPerformance)
                                 .status(HttpStatus.OK.value())
-                                .message(String.format("Student Performance dengan ID %s berhasil ditemukan", id))
+                                .message(String.format("Student Performance untuk siswa dengan ID %s berhasil ditemukan", id))
                                 .timestamp(new Date())
                                 .build();
 
@@ -94,7 +94,7 @@ public class StudentPerformanceController {
 
         @DeleteMapping("/delete/{id}")
         public BaseResponseDTO<Void> deletePerformance(@PathVariable Long id) {
-                studentPerformanceService.deletePerformance(id);
+                studentPerformanceService.deletePerformanceByStudentId(id);
                 return BaseResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())
                                 .message("Student Performance dengan id " + id + " berhasil dicancel")

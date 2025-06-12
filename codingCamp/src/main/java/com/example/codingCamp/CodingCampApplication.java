@@ -46,11 +46,11 @@ public class CodingCampApplication {
 		return args -> {
 			try {
 				// SUPER_ADMIN role
-				if (roleRepository.findByRole("SUPER_ADMIN").isEmpty()) {
+				if (roleRepository.findByRole("ADMIN").isEmpty()) {
 					Role role = new Role();
-					role.setRole("SUPER_ADMIN");
+					role.setRole("ADMIN");
 					roleRepository.save(role);
-					System.out.println("✓ SUPER_ADMIN role created");
+					System.out.println("✓ ADMIN role created");
 				}
 
 				if (userRepository.findByUsername("admin_budi").isEmpty()) { // Ubah dari == null ke isEmpty()
@@ -60,7 +60,7 @@ public class CodingCampApplication {
 					user.setEmail("bprasetyo21@outlook.com");
 					user.setPhone("081234567890");
 					user.setPassword(userService.hashPassword("budi"));
-					user.setRole(roleRepository.findByRole("SUPER_ADMIN").orElse(null));
+					user.setRole(roleRepository.findByRole("ADMIN").orElse(null));
 					userRepository.save(user);
 					System.out.println("✓ Admin user created");
 				}

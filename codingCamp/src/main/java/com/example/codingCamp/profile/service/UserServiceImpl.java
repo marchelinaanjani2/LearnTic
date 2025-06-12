@@ -159,13 +159,13 @@ public class UserServiceImpl implements UserService {
                 AddUserRequestDTO userDTO = new AddUserRequestDTO();
                 userDTO.setName(fields[0].trim());
                 userDTO.setUsername(fields[1].trim());
-                userDTO.setEmail(fields[2].trim());
-                userDTO.setPhone(fields[3].trim());
+                userDTO.setEmail(fields[3].trim());
+                userDTO.setPhone(fields[2].trim());
                 userDTO.setPassword(fields[4].trim());
                 userDTO.setRoleName(fields[5].trim());
 
-                String role = userDTO.getRoleName().toLowerCase();
-                if ("parent".equalsIgnoreCase(userDTO.getRoleName())) {
+    
+                if ("PARENT".equalsIgnoreCase(userDTO.getRoleName())) {
                     parentDTOs.add(userDTO);
                 } else {
                     studentDTOs.add(userDTO);
