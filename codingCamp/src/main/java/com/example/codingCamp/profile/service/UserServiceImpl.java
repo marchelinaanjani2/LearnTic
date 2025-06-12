@@ -152,24 +152,26 @@ public class UserServiceImpl implements UserService {
                     continue; // skip header
 
                 String[] fields = line.split(",", -1);
-                if (fields.length < 6) {
+                if (fields.length < 8) { // karena sekarang kita pakai 8 kolom
                     throw new RuntimeException("Format CSV salah di baris " + lineNumber);
                 }
 
                 AddUserRequestDTO userDTO = new AddUserRequestDTO();
                 userDTO.setName(fields[0].trim());
                 userDTO.setUsername(fields[1].trim());
-                userDTO.setEmail(fields[3].trim());
                 userDTO.setPhone(fields[2].trim());
+                userDTO.setEmail(fields[3].trim());
                 userDTO.setPassword(fields[4].trim());
                 userDTO.setRoleName(fields[5].trim());
+                userDTO.setKelas(fields[6].trim());
+                userDTO.setOrangTuaUsername(fields[7].trim());
 
-    
                 if ("PARENT".equalsIgnoreCase(userDTO.getRoleName())) {
                     parentDTOs.add(userDTO);
                 } else {
                     studentDTOs.add(userDTO);
                 }
+
             }
         }
 

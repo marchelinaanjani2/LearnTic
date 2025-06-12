@@ -18,6 +18,7 @@ import lombok.Setter;
 @DiscriminatorValue("PARENT")
 public class Parent extends UserModel {
 
-    @OneToMany(mappedBy = "orangTua", fetch = FetchType.LAZY)
-    private List<Student> anak;  
+    @OneToMany(mappedBy = "orangTua", fetch = FetchType.EAGER)
+    private List<Student> anak;
+
 }

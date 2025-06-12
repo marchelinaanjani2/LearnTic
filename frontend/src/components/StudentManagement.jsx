@@ -121,12 +121,15 @@ const StudentManagement = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manajemen Siswa</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" /> Tambah Siswa
-        </button>
+        {user?.role !== 'STUDENT' && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" /> Tambah Siswa
+          </button>
+        )}
+
 
       </div>
 
@@ -152,7 +155,6 @@ const StudentManagement = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3">ID</th>
-                  <th className="text-left py-3">Nama</th>
                   <th className="text-left py-3">Semester</th>
                   <th className="text-left py-3">Ketidakadiran</th>
                   <th className="text-left py-3">Prediksi</th>
@@ -165,7 +167,7 @@ const StudentManagement = () => {
                 {filteredStudents.map(student => (
                   <tr key={student.siswaId} className="border-b hover:bg-gray-50">
                     <td className="py-3">{student.siswaId}</td>
-                    <td className="py-3">{student.name}</td>
+
                     <td className="py-3">{student.semester}</td>
                     <td className="py-3">{student.jumlahKetidakhadiran}</td>
                     <td className="py-3">{student.statusPrediksi}</td>

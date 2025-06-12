@@ -326,7 +326,14 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
                 performanceList = Collections.emptyList();
             }
         } else if ("PARENT".equalsIgnoreCase(role)) {
+
             Optional<Parent> parentOpt = parentRepository.findById(userId);
+            if (parentOpt.isPresent()) {
+                Parent parent = parentOpt.get();
+                List<Student> anakList = parent.getAnak();
+                System.out.println("Anak list size: " + anakList.size());
+            }
+
             if (parentOpt.isPresent()) {
                 Parent parent = parentOpt.get();
                 List<Student> anakList = parent.getAnak();
