@@ -317,29 +317,26 @@ public class StudentPerformanceServiceImpl implements StudentPerformanceService 
         List<StudentPerformance> performanceList;
 
         if ("STUDENT".equalsIgnoreCase(role)) {
-            // Cari student entity berdasarkan user id
             Optional<Student> studentOpt = studentRepository.findById(userId);
             if (studentOpt.isPresent()) {
                 Student student = studentOpt.get();
-                performanceList = studentPerformanceRepository.findByStudent_Id(student.getId(), sort);
+                performanceList = studentPerformanceRepository.findByStudent_IdAndDeletedAtIsNull(student.getId(),
+                        sort);
             } else {
                 performanceList = Collections.emptyList();
             }
         } else if ("PARENT".equalsIgnoreCase(role)) {
-            // Cari parent entity berdasarkan user id
             Optional<Parent> parentOpt = parentRepository.findById(userId);
             if (parentOpt.isPresent()) {
                 Parent parent = parentOpt.get();
                 List<Student> anakList = parent.getAnak();
-                performanceList = studentPerformanceRepository.findByStudentIn(anakList, sort);
+                performanceList = studentPerformanceRepository.findByStudentInAndDeletedAtIsNull(anakList, sort);
             } else {
                 performanceList = Collections.emptyList();
             }
         } else if ("TEACHER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
-            // Teacher dan Admin bisa lihat semua
-            performanceList = studentPerformanceRepository.findAll(sort);
+            performanceList = studentPerformanceRepository.findByDeletedAtIsNull(sort);
         } else {
-            // Role tidak dikenali
             performanceList = Collections.emptyList();
         }
 

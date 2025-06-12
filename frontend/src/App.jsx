@@ -59,12 +59,12 @@ function App() {
               <ProfilePage />
             </PrivateRoute>
           } />
-          <Route path="/edit" element={
+          <Route path="/profile/edit" element={
             <PrivateRoute>
               <EditProfilePage />
             </PrivateRoute>
           } />
-          <Route path="/change-password" element={
+          <Route path="/profile/change-password" element={
             <PrivateRoute>
               <ChangePasswordPage />
             </PrivateRoute>

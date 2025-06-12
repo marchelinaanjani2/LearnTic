@@ -2,26 +2,31 @@ import { useState, useEffect } from 'react';
 import { MoreVertical, Lock, Edit, User, Calendar, Mail, Phone, Tag, UserCheck, Loader2 } from 'lucide-react';
 import { EyeIcon, PencilIcon, XMarkIcon, PlusIcon } from '@heroicons/react/20/solid';
 import api from '../api/Axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   const handleEditProfile = () => {
-    window.location.href = '/profile/edit';
+    navigate('/profile/edit');
     setIsMenuOpen(false);
   };
 
   const handleChangePassword = () => {
-    window.location.href = '/profile/change-password';
+    navigate('/profile/change-password');
     setIsMenuOpen(false);
   };
+
 
   const fetchProfile = async () => {
     try {
@@ -127,6 +132,15 @@ export default function ProfilePage() {
               Ubah Profil
             </button>
           </span>
+          <span className="sm:ml-5">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Kembali ke Dashboard
+            </button>
+          </span>
         </div>
 
       </div>
@@ -134,9 +148,9 @@ export default function ProfilePage() {
         <div className="table-container bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="relative">
-              
 
-              
+
+
             </div>
           </div>
 

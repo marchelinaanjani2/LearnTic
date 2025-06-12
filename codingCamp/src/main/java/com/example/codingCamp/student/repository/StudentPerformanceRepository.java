@@ -20,4 +20,7 @@ public interface StudentPerformanceRepository extends JpaRepository<StudentPerfo
     List<StudentPerformance> findByStudent_Id(Long studentId, Sort sort);
 
     List<StudentPerformance> findByStudentIn(List<Student> students, Sort sort);
+    List<StudentPerformance> findByDeletedAtIsNull(Sort sort);
+    List<StudentPerformance> findByStudent_IdAndDeletedAtIsNull(Long studentId, Sort sort);
+    List<StudentPerformance> findByStudentInAndDeletedAtIsNull(List<Student> students, Sort sort);
 }

@@ -35,11 +35,12 @@ const ScoreInputForm = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
+        const predictionResponse = await api.get('api/prediction/batch');
         const response = await api.get('api/student');
         const studentsData = Array.isArray(response.data) ? response.data : response.data.data || [];
         setStudents(studentsData);
 
-        const predictionResponse = await api.get('api/prediction/batch');
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching students:', error);
@@ -50,6 +51,16 @@ const ScoreInputForm = () => {
     };
     fetchStudents();
   }, []);
+
+  const triggerPrediction = async () => {
+    try {
+      await api.get('api/prediction/batch');
+      console.log('Prediction triggered');
+    } catch (error) {
+      console.error('Error triggering prediction:', error);
+    }
+  };
+
 
   const handleScoreChange = (subject, type, value) => {
     const score = Math.min(100, Math.max(0, parseInt(value) || 0));
@@ -94,6 +105,7 @@ const ScoreInputForm = () => {
         alert('Nilai berhasil disimpan!');
         console.log('Response:', response.data);
         resetForm();
+        await triggerPrediction();  // <-- trigger prediction setelah submit sukses
       } catch (error) {
         console.error('Error saving scores:', error);
         alert('Gagal menyimpan nilai');
@@ -102,6 +114,7 @@ const ScoreInputForm = () => {
       await handleCsvUpload();
     }
   };
+
 
   const resetForm = () => {
     setSelectedStudent('');
@@ -128,6 +141,7 @@ const ScoreInputForm = () => {
       alert('Upload CSV berhasil!');
       console.log('CSV upload response:', response.data);
       setCsvFile(null);
+      await triggerPrediction();
     } catch (error) {
       console.error('Error uploading CSV:', error);
       alert('Gagal upload CSV');
@@ -214,10 +228,10 @@ const ScoreInputForm = () => {
 
         {/* Scores */}
         <div className="space-y-8">
-          {[{title: 'Nilai Ujian', state: examScores, setter: setExamScores, color: 'blue'},
-            {title: 'Nilai Tugas', state: taskScores, setter: setTaskScores, color: 'green'},
-            {title: 'Nilai Kuis', state: quizScores, setter: setQuizScores, color: 'purple'}
-          ].map(({title, state, setter, color}) => (
+          {[{ title: 'Nilai Ujian', state: examScores, setter: setExamScores, color: 'blue', type: 'exam' },
+          { title: 'Nilai Tugas', state: taskScores, setter: setTaskScores, color: 'green', type: 'task' },
+          { title: 'Nilai Kuis', state: quizScores, setter: setQuizScores, color: 'purple', type: 'quiz' }
+          ].map(({ title, state, setter, color, type }) => (
             <div key={title}>
               <h3 className={`text-lg font-semibold mb-4 text-${color}-600`}>{title}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -229,14 +243,15 @@ const ScoreInputForm = () => {
                       min="0"
                       max="100"
                       value={state[subject] || ''}
-                      onChange={(e) => handleScoreChange(subject, title.split(' ')[1].toLowerCase(), e.target.value)}
+                      onChange={(e) => handleScoreChange(subject, type, e.target.value)}
                       className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-${color}-500`}
                     />
                   </div>
                 ))}
               </div>
             </div>
-          ))}
+          ))
+          }
         </div>
 
         <div className="mt-8 flex gap-4">

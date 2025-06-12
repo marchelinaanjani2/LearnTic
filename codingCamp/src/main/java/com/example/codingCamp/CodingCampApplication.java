@@ -100,7 +100,7 @@ public class CodingCampApplication {
 					teacher.setUsername("teacher_budi");
 					teacher.setEmail("budi.teacher@example.com");
 					teacher.setPhone("081234567896");
-					teacher.setPassword(userService.hashPassword("teacher!"));
+					teacher.setPassword(userService.hashPassword("teacher"));
 					teacher.setRole(roleRepository.findByRole("TEACHER").orElse(null));
 					userRepository.save(teacher);
 					System.out.println("✓ Teacher user created");
@@ -120,7 +120,7 @@ public class CodingCampApplication {
 					parent.setUsername("parent_ani");
 					parent.setEmail("ani.parent@example.com");
 					parent.setPhone("081234567897");
-					parent.setPassword(userService.hashPassword("ParentAni2025!"));
+					parent.setPassword(userService.hashPassword("parentani"));
 					parent.setRole(roleRepository.findByRole("PARENT").orElse(null));
 
 					Student anak = (Student) userRepository.findByUsername("student_rini").orElse(null);

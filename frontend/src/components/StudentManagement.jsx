@@ -23,23 +23,16 @@ const StudentManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const studentsResponse = await api.get('api/student');
-      const studentsData = Array.isArray(studentsResponse.data.data) ? studentsResponse.data.data : [];
-      setStudents(studentsData);
-
-      const predictionResponse = await api.get('api/prediction/viewall');
-      const predictionsData = Array.isArray(predictionResponse.data.data) ? predictionResponse.data.data : [];
-      setPredictions(predictionsData);
+      const response = await api.get('api/student-performance/viewall');
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      setStudents(data);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setStudents([]);
-      setPredictions([]);
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const getStudentPrediction = (studentId) => {
     return predictions.find(p => p.siswaId === studentId) || null;
@@ -47,11 +40,10 @@ const StudentManagement = () => {
 
 
   const filteredStudents = students
-    .filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(student => {
-      const prediction = getStudentPrediction(student.id);
-      return prediction !== null && prediction.semesterSiswa !== null;
-    });
+    .filter(student =>
+      (student.namaSiswa || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(student => student.statusPrediksi !== null);
 
   const handleDeletePerformance = async (siswaId) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus data performa ini?')) {
@@ -167,55 +159,38 @@ const StudentManagement = () => {
                   <th className="text-left py-3">Aksi</th>
                 </tr>
               </thead>
+
+
               <tbody>
-                {filteredStudents.map(student => {
-                  const prediction = getStudentPrediction(student.id);
-                  const isPrediksiAvailable = prediction.statusPrediksi !== null;
-                  const disabledStyle = !isPrediksiAvailable ? 'opacity-50 cursor-not-allowed' : '';
-                  if (prediction.statusPrediksi === null) {
-                    return null;
-                  }
-                  return (
-                    <tr key={student.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3">{student.id}</td>
-                      <td className="py-3">{student.name}</td>
-                      <td className="py-3">{prediction.semesterSiswa || 'N/A'}</td>
-                      <td className="py-3">{prediction.jumlahKetidakhadiran || 0}</td>
-                      <td className="py-3">{prediction.statusPrediksi || 'Belum ada prediksi'}</td>
-                      <td className="py-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewDetail(student.id)}
-                            className={`text-blue-600 hover:text-blue-800 ${!isPrediksiAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={!isPrediksiAvailable}
-                          >
-                            <Eye className={`w-4 h-4`} />
-                          </button>
+                {filteredStudents.map(student => (
+                  <tr key={student.siswaId} className="border-b hover:bg-gray-50">
+                    <td className="py-3">{student.siswaId}</td>
+                    <td className="py-3">{student.name}</td>
+                    <td className="py-3">{student.semester}</td>
+                    <td className="py-3">{student.jumlahKetidakhadiran}</td>
+                    <td className="py-3">{student.statusPrediksi}</td>
+                    <td className="py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleViewDetail(student.siswaId)} className="text-blue-600 hover:text-blue-800">
+                          <Eye className="w-4 h-4" />
+                        </button>
 
-                          {user?.role !== 'STUDENT' && (
-                            <>
-                              <button
-                                onClick={() => handleEdit(student.id)}
-                                className={`text-green-600 hover:text-green-800 ${!isPrediksiAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={!isPrediksiAvailable}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeletePerformance(student.id)}
-                                className={`text-red-600 hover:text-red-800 ${!isPrediksiAvailable && 'opacity-50 cursor-not-allowed'}`}
-                                disabled={!isPrediksiAvailable}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>)}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-
+                        {user?.role !== 'STUDENT' && (
+                          <>
+                            <button onClick={() => handleEdit(student.siswaId)} className="text-green-600 hover:text-green-800">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeletePerformance(student.siswaId)} className="text-red-600 hover:text-red-800">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
+
             </table>
           </div>
         )}

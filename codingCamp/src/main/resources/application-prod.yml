@@ -1,16 +1,25 @@
 spring:
-  config:
-    import: optional:file:.env[.properties]
 
   application:
     name: codingCamp
 
   datasource:
-    url: ${DATABASE_URL_DEV}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: jdbc:postgresql://db.jgkaxopnpwpozczberrl.supabase.co:5432/postgres?sslmode=require
+    username: postgres
+    password: Secret99_.12345Learntic
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 30000
       maximum-pool-size: 5
       initialization-fail-timeout: -1
+
+flask:
+  api:
+    url: https://learntic-production.up.railway.app/predict
+    timeout: 30000
+    retry:
+      max: 3
+
+batch:
+  processing:
+    delay: 100
