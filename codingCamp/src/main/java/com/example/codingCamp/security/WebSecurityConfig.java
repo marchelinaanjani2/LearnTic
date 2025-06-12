@@ -51,8 +51,37 @@ public class WebSecurityConfig {
                 .securityMatcher("/api/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requests -> requests
+
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/notification").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+                        .requestMatchers("/api/prediction/batch").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/user/add").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/user/upload-csv").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/user/update").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/user/delete").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/user/viewall").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/student-performance/create").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/student-performance/{id}/update").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/student-performance/viewall").hasAnyAuthority( "TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/student-performance/detail/{id}").hasAnyAuthority( "TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/student-performance/delete/{id}").hasAuthority( "TEACHER")
+                        .requestMatchers("/api/student-performance/upload-csv").hasAuthority( "TEACHER")
+
+                        .requestMatchers("/api/user").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+
+                        .requestMatchers("/api/student").hasAnyAuthority( "TEACHER", "STUDENT")
+                        .requestMatchers("/api/prediction/viewall").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+                        .requestMatchers("/api/profile").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+                        .requestMatchers("/api/profile/update").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+                        .requestMatchers("/api/profile/update-password").hasAnyAuthority("STUDENT", "TEACHER", "PARENT")
+
+
+
+
+
+
                         
-                        .anyRequest().permitAll())
+                        .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e
