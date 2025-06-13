@@ -63,6 +63,8 @@ Berikut variabel dataset, dan penjelasannya:
 | Persentase Tugas      | `int64`   | Presentase penyelesaian tugas                    |
 | performance\_trend    | `object`  | Pola tren performa (mis. Stable, Increase, etc.) |
 
+Untuk mengunduh dataset hasil pembuatan dummy data secara langsung, dapat membuka link ini
+[Dummy Dataset](https://drive.google.com/file/d/1_I-jcpscljoSQnY7HBurvSLcR-H3sUMo/view?usp=sharing)
 
  
 ### Exploring the Dataset
